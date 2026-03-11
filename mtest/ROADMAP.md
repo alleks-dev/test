@@ -109,6 +109,12 @@ Federation повинна з’являтися як:
 - `TEST_STRATEGY.md`
 - `MODULE_CONTRACTS.md`
 - `DEPENDENCY_RULES.md`
+- `MEMORY_BUDGETS.md`
+- `CONFIG_SCHEMA.md`
+- `ERROR_MODEL.md`
+- `EVENT_CONTRACTS.md`
+- `API_HEADERS_PLAN.md`
+- `CI_RULES.md`
 - `ROADMAP.md`
 - базові domain type definitions
 - agreed naming conventions
