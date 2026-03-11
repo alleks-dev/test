@@ -33,6 +33,7 @@
 - має чіткі доменні моделі
 - готовий до remote-origin / remote-target
 - не залежить архітектурно від single-only assumptions
+- є MQTT 5-ready на рівні архітектури, але без обов’язкової повної MQTT 5 реалізації в MVP
 
 ---
 
@@ -93,16 +94,18 @@ Federation повинна з’являтися як:
 
 ### Результати етапу
 - узгоджена доменна модель
-- структура директорій
+- єдина logical/physical структура директорій
 - coding guidelines
 - architecture guidelines
 - test strategy
 - config philosophy
+- config versioning strategy
 - namespace strategy
 
 ### Deliverables
 - `ARCHITECTURE.md`
 - `CODING_GUIDELINES.md`
+- `TECH_STACK.md`
 - `TEST_STRATEGY.md`
 - `ROADMAP.md`
 - базові domain type definitions
@@ -124,14 +127,16 @@ Federation повинна з’являтися як:
 Побудувати мінімальне, чисте, правильне ядро брокера для одного вузла.
 
 ### Обсяг
-- MQTT protocol engine
+- protocol engine
+- qos engine
 - session manager
-- retained manager
+- retained store
+- subscription index
+- acl engine
 - routing engine
-- ACL engine
 - transport abstraction
 - storage interfaces
-- базовий runtime
+- runtime wiring
 
 ### Що має працювати
 - client connect/disconnect
@@ -143,6 +148,16 @@ Federation повинна з’являтися як:
 - clean session
 - basic persistent session semantics
 - базові protocol limits
+
+### MQTT policy для ранніх етапів
+- core і protocol engine повинні бути `MQTT 5-ready`
+- MVP не зобов’язаний підтримувати весь MQTT 5 feature set
+- нові MQTT 5 capabilities додаються лише поетапно з тестами і budget review
+
+MQTT 5 readiness profile:
+- `must-have later`: reason codes, session expiry, message expiry, receive maximum, maximum packet size
+- `maybe later`: user properties, response topic / correlation data, topic aliases, subscription identifiers
+- `definitely not MVP`: full packet-property coverage, shared subscriptions, optimization-heavy protocol features without measured value
 
 ### Чого ще не робимо
 - federation
@@ -179,6 +194,8 @@ Federation повинна з’являтися як:
 - queue telemetry
 - heap / memory high-water marks
 - config validation
+- config schema versioning
+- config migration support
 - explicit limits for payload/topic/clients/queues
 
 ### Що має з’явитися
@@ -189,18 +206,24 @@ Federation повинна з’являтися як:
 - tracing for route decisions
 - tracing for retained updates
 - tracing for queue overflow
+- current config schema version
+- migration path from previous supported config versions
 
 ### Deliverables
 - observability module
 - metrics port + adapter
 - debug build profile
 - config sanity checks
+- versioned config loader
+- config migration tests
 
 ### Exit criteria
 - будь-яка критична подія має trace/log/metric
 - memory pressure видно з runtime
 - ліміти конфігурації явно перевіряються
 - можна діагностувати queue overflow, retry storm, retained growth
+- supported previous config versions мігруються детерміновано
+- incompatible config versions fail-fast на startup
 
 ---
 
@@ -547,20 +570,22 @@ Roadmap вважається успішним, якщо:
 
 ```text
 1. domain types
-2. routing engine
-3. retained manager
+2. protocol engine
+3. qos engine
 4. session manager
-5. qos engine
-6. protocol engine
-7. transport abstraction
-8. storage abstraction
-9. runtime wiring
-10. metrics/logging
-11. persistence
-12. broker link
-13. federation policies
-14. standby profile
-15. production federation tooling
+5. retained manager
+6. subscription index
+7. acl engine
+8. routing engine
+9. transport abstraction
+10. storage abstraction
+11. runtime wiring
+12. metrics/logging
+13. persistence
+14. broker link
+15. federation policies
+16. standby profile
+17. production federation tooling
 ```
 
 ---
@@ -575,6 +600,8 @@ Roadmap вважається успішним, якщо:
 - strict limits
 - metrics/logging
 - restart recovery
+- MQTT 5-ready architecture without full MQTT 5 feature matrix
+- no commitment to nonessential MQTT 5 optional features
 
 ### MVP для N16R8
 - усе з N8R2 MVP
@@ -582,6 +609,7 @@ Roadmap вважається успішним, якщо:
 - bridge-ready core
 - stronger persistence
 - optional primary/standby preparation
+- staged MQTT 5 feature rollout only where justified by use case
 
 ---
 

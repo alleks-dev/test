@@ -29,6 +29,7 @@
 - **CMake**
 - **ESP-IDF components-based structure**
 - **host-side tests + ESP-IDF integration tests + hardware tests**
+- **MQTT 5-ready protocol architecture with staged feature rollout**
 
 ---
 
@@ -43,6 +44,7 @@
 - ESP-IDF використовується через adapters
 - build має підтримувати окреме тестування core і platform-рівня
 - дозволена лише контрольована підмножина C++/STL
+- protocol model має допускати MQTT 5 extension points без повного feature commitment у MVP
 
 ---
 
@@ -86,6 +88,18 @@ C допустимий для:
 Тобто:
 - **архітектура і доменна логіка — C++**
 - **low-level edge code — за потреби C або C-shaped C++**
+
+## 4.3. MQTT protocol policy
+
+Рекомендація:
+- будувати broker як `MQTT 5-ready`
+- не намагатися реалізувати весь MQTT 5 у першому production milestone
+
+Це означає:
+- packet parser/serializer повинен допускати extensible property model
+- reason-code oriented protocol responses бажано закласти відразу
+- optional MQTT 5 features вводяться поетапно, коли є тестове й ресурсне обґрунтування
+- MQTT 3.1.1-compatible stable path залишається пріоритетом для ранніх етапів
 
 ---
 
@@ -274,6 +288,10 @@ C допустимий для:
 - різні diagnostics knobs
 - різні transport/persistence/federation feature flags
 
+Build/profile policy не замінює runtime config schema versioning:
+- `sdkconfig.defaults*` задають platform/build defaults
+- runtime `config_loader` повинен працювати з versioned config schema і migration rules
+
 ---
 
 ## 10. Recommended compile policy
@@ -306,10 +324,15 @@ C допустимий для:
 - logging level per build profile
 - asserts у debug/test профілях
 - bounded config validation на startup
+- version-aware config loading before runtime wiring
 
 ---
 
 ## 11. Рекомендована структура директорій
+
+Це **фізична реалізація** логічної модульної структури з `ARCHITECTURE.md`.
+Логічні `/core`, `/ports`, `/adapters`, `/app` відображаються тут у `components/`,
+`main/` і `test/` відповідно до ESP-IDF component model.
 
 ```text
 project/
@@ -341,6 +364,11 @@ project/
       include/routing/
       src/
 
+    acl/
+      CMakeLists.txt
+      include/acl/
+      src/
+
     session/
       CMakeLists.txt
       include/session/
@@ -365,6 +393,17 @@ project/
       CMakeLists.txt
       include/ports/
       src/
+      transport_endpoint_port.hpp
+      transport_listener_port.hpp
+      session_store_port.hpp
+      retained_store_port.hpp
+      subscription_index_port.hpp
+      acl_policy_port.hpp
+      router_policy_port.hpp
+      clock_port.hpp
+      logger_port.hpp
+      metrics_port.hpp
+      federation_link_port.hpp
 
     transport_tcp/
       CMakeLists.txt
@@ -407,7 +446,7 @@ project/
 Відповідає за:
 - orchestration доменної логіки
 - життєвий цикл вузла
-- координацію між routing/session/qos/retained
+- координацію між routing/acl/session/qos/retained
 
 Не повинен містити ESP-IDF details.
 
@@ -419,6 +458,7 @@ project/
 - packet parsing
 - packet serialization
 - MQTT-level protocol semantics
+- extensible handling of MQTT 5 properties/reason codes
 
 Не повинен вирішувати high-level routing policy.
 
@@ -434,7 +474,16 @@ project/
 
 ---
 
-## 12.4. `session`
+## 12.4. `acl`
+
+Відповідає за:
+- publish/subscribe authorization
+- namespace-aware ACL matching
+- default-deny policy evaluation
+
+---
+
+## 12.5. `session`
 
 Відповідає за:
 - session lifecycle
@@ -443,7 +492,7 @@ project/
 
 ---
 
-## 12.5. `retained`
+## 12.6. `retained`
 
 Відповідає за:
 - retained storage semantics
@@ -452,7 +501,7 @@ project/
 
 ---
 
-## 12.6. `qos`
+## 12.7. `qos`
 
 Відповідає за:
 - QoS1 inflight state
@@ -461,7 +510,7 @@ project/
 
 ---
 
-## 12.7. `federation`
+## 12.8. `federation`
 
 Відповідає за:
 - bridge policies
@@ -471,7 +520,7 @@ project/
 
 ---
 
-## 12.8. `ports`
+## 12.9. `ports`
 
 Містить:
 - чисті інтерфейси
@@ -482,7 +531,7 @@ project/
 
 ---
 
-## 12.9. `transport_*`, `storage_*`, `platform_*`
+## 12.10. `transport_*`, `storage_*`, `platform_*`
 
 Це adapters, які:
 - перекладають platform API у доменні інтерфейси
@@ -504,6 +553,7 @@ project/
 - `ISessionStore`
 - `IRetainedStore`
 - `ISubscriptionIndex`
+- `IAclPolicy`
 - `IRouterPolicy`
 - `IFederationLink`
 
@@ -626,6 +676,7 @@ idf_component_register(
     REQUIRES
         ports
         routing
+        acl
         session
         retained
         qos
