@@ -107,6 +107,8 @@ Federation повинна з’являтися як:
 - `CODING_GUIDELINES.md`
 - `TECH_STACK.md`
 - `TEST_STRATEGY.md`
+- `MODULE_CONTRACTS.md`
+- `DEPENDENCY_RULES.md`
 - `ROADMAP.md`
 - базові domain type definitions
 - agreed naming conventions
