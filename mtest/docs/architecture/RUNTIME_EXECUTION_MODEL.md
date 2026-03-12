@@ -10,10 +10,10 @@
 - задати single-writer ownership model для mutable runtime state
 
 Документ узгоджується з:
-- `ARCHITECTURE.md`
-- `MODULE_CONTRACTS.md`
-- `EVENT_CONTRACTS.md`
-- `DEPENDENCY_RULES.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/EVENT_CONTRACTS.md`
+- `docs/architecture/DEPENDENCY_RULES.md`
 
 ---
 

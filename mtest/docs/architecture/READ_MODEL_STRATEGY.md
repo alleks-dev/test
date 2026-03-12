@@ -10,10 +10,10 @@
 - підготувати clean seams для `admin API`, diagnostics, federation views і future bridges
 
 Документ узгоджується з:
-- `ARCHITECTURE.md`
-- `MODULE_CONTRACTS.md`
-- `EVENT_CONTRACTS.md`
-- `TEST_STRATEGY.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/EVENT_CONTRACTS.md`
+- `docs/testing/TEST_STRATEGY.md`
 
 ---
 

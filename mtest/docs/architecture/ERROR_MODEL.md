@@ -10,10 +10,10 @@
 - зробити помилки придатними для logs, metrics, tests і policy decisions
 
 Документ узгоджується з:
-- `CODING_GUIDELINES.md`
-- `TECH_STACK.md`
-- `MODULE_CONTRACTS.md`
-- `TEST_STRATEGY.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/architecture/TECH_STACK.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/testing/TEST_STRATEGY.md`
 
 ---
 

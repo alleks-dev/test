@@ -61,10 +61,10 @@ cd "${ROOT_DIR}"
 
 if [[ "${strict_mode}" -eq 1 ]]; then
   run_step "Architecture invariants (strict)" \
-    env ARCH_BLOCKING_SEVERITIES=high,medium,low bash ./check_arch_invariants.sh
+    env ARCH_BLOCKING_SEVERITIES=high,medium,low bash ./scripts/check_arch_invariants.sh
 else
   run_step "Architecture invariants" \
-    bash ./check_arch_invariants.sh
+    bash ./scripts/check_arch_invariants.sh
 fi
 
 if [[ "${skip_host}" -eq 0 ]]; then

@@ -10,14 +10,14 @@
 - зафіксувати inputs/outputs, ownership, errors, threading і testability expectations
 
 Документ узгоджується з:
-- `ARCHITECTURE.md`
-- `TECH_STACK.md`
-- `CODING_GUIDELINES.md`
-- `TEST_STRATEGY.md`
-- `ROADMAP.md`
-- `READ_MODEL_STRATEGY.md`
-- `RUNTIME_EXECUTION_MODEL.md`
-- `ASYNC_OPERATION_MODEL.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/TECH_STACK.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/testing/TEST_STRATEGY.md`
+- `docs/planning/ROADMAP.md`
+- `docs/architecture/READ_MODEL_STRATEGY.md`
+- `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
+- `docs/architecture/ASYNC_OPERATION_MODEL.md`
 
 ---
 

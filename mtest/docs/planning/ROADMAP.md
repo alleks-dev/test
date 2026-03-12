@@ -103,28 +103,28 @@ Federation повинна з’являтися як:
 - namespace strategy
 
 ### Deliverables
-- `ARCHITECTURE.md`
-- `CODING_GUIDELINES.md`
-- `TECH_STACK.md`
-- `TEST_STRATEGY.md`
-- `MODULE_CONTRACTS.md`
-- `DEPENDENCY_RULES.md`
-- `ARCH_COMPLIANCE_MATRIX.md`
-- `ADR_EXCEPTIONS.md`
-- `TEAM_WORKFLOW.md`
-- `ARCH_CHECKS.md`
-- `READ_MODEL_STRATEGY.md`
-- `RUNTIME_EXECUTION_MODEL.md`
-- `ASYNC_OPERATION_MODEL.md`
-- `MEMORY_BUDGETS.md`
-- `CONFIG_SCHEMA.md`
-- `ERROR_MODEL.md`
-- `EVENT_CONTRACTS.md`
-- `API_HEADERS_PLAN.md`
-- `CI_RULES.md`
-- `check_arch_invariants.sh`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/architecture/TECH_STACK.md`
+- `docs/testing/TEST_STRATEGY.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/DEPENDENCY_RULES.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
+- `docs/governance/ADR_EXCEPTIONS.md`
+- `docs/governance/TEAM_WORKFLOW.md`
+- `docs/governance/ARCH_CHECKS.md`
+- `docs/architecture/READ_MODEL_STRATEGY.md`
+- `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
+- `docs/architecture/ASYNC_OPERATION_MODEL.md`
+- `docs/architecture/MEMORY_BUDGETS.md`
+- `docs/architecture/CONFIG_SCHEMA.md`
+- `docs/architecture/ERROR_MODEL.md`
+- `docs/architecture/EVENT_CONTRACTS.md`
+- `docs/architecture/API_HEADERS_PLAN.md`
+- `docs/governance/CI_RULES.md`
+- `scripts/check_arch_invariants.sh`
 - `scripts/run_blocking_local_checks.sh`
-- `ROADMAP.md`
+- `docs/planning/ROADMAP.md`
 - базові domain type definitions
 - agreed naming conventions
 - agreed module boundaries

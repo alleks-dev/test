@@ -10,10 +10,10 @@
 - дати основу для request/result tracking, polling і diagnostics
 
 Документ узгоджується з:
-- `MODULE_CONTRACTS.md`
-- `ERROR_MODEL.md`
-- `READ_MODEL_STRATEGY.md`
-- `RUNTIME_EXECUTION_MODEL.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/ERROR_MODEL.md`
+- `docs/architecture/READ_MODEL_STRATEGY.md`
+- `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
 
 ---
 

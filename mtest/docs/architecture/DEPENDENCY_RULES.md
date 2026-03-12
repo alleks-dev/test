@@ -10,10 +10,10 @@
 - дати основу для code review, CMake wiring і include policy
 
 Документ узгоджується з:
-- `ARCHITECTURE.md`
-- `TECH_STACK.md`
-- `CODING_GUIDELINES.md`
-- `MODULE_CONTRACTS.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/TECH_STACK.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
 
 ---
 

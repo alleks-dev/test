@@ -122,7 +122,7 @@
 
 Rules:
 - public headers expose contracts, not internal platform details
-- initial methods may be stubbed but signatures must respect `MODULE_CONTRACTS.md`
+- initial methods may be stubbed but signatures must respect `docs/architecture/MODULE_CONTRACTS.md`
 
 ### 5.4. Test-only access headers
 
@@ -231,7 +231,7 @@ Milestone вважається досягнутим, якщо:
 ## 11. Early CMake rules
 
 - architecture check target повинен існувати рано, навіть якщо codebase ще мала
-- `check_arch_invariants.sh` має входити в локальний і CI bootstrap bundle
+- `scripts/check_arch_invariants.sh` має входити в локальний і CI bootstrap bundle
 
 На старті:
 - `ports` independent component
@@ -259,8 +259,8 @@ Avoid:
 ## 13. Review checklist for skeleton PRs
 
 Для кожного skeleton PR перевіряти:
-1. Чи не порушено `DEPENDENCY_RULES.md`
-2. Чи відповідають signatures `MODULE_CONTRACTS.md`
+1. Чи не порушено `docs/architecture/DEPENDENCY_RULES.md`
+2. Чи відповідають signatures `docs/architecture/MODULE_CONTRACTS.md`
 3. Чи є host-side buildability
 4. Чи не з’явився platform leakage у core
 5. Чи є хоча б один test або compile check на новий контракт

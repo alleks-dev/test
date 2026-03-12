@@ -131,7 +131,7 @@ Optional fields:
 - `diagnostics_budget`
 
 Rules:
-- values must align with `MEMORY_BUDGETS.md`
+- values must align with `docs/architecture/MEMORY_BUDGETS.md`
 - hard limit must always be greater than or equal to soft limit
 
 ### 5.3. `queues`
@@ -324,8 +324,8 @@ The following must be validated explicitly:
 - `max_payload_size <= max_packet_size` if `max_packet_size` exists
 - `max_queue_depth_per_client <= max_total_queued_messages`
 - `federation.enabled=false` with non-empty federation rules should either normalize safely or fail explicitly
-- `profile=n8r2` must not exceed `N8R2` hard limits from `MEMORY_BUDGETS.md`
-- `profile=n16r8` must not exceed `N16R8` hard limits from `MEMORY_BUDGETS.md`
+- `profile=n8r2` must not exceed `N8R2` hard limits from `docs/architecture/MEMORY_BUDGETS.md`
+- `profile=n16r8` must not exceed `N16R8` hard limits from `docs/architecture/MEMORY_BUDGETS.md`
 - namespace-related routing/ACL/federation fields must remain internally consistent
 
 ---
@@ -355,7 +355,7 @@ BrokerConfig {
 
 ## 10. Test expectations
 
-`TEST_STRATEGY.md` must cover:
+`docs/testing/TEST_STRATEGY.md` must cover:
 - current schema parse
 - migration from previous supported versions
 - invalid version rejection

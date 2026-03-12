@@ -5,14 +5,14 @@
 Цей документ описує набір автоматичних архітектурних перевірок для репозиторію.
 
 Його цілі:
-- зробити `ARCH_COMPLIANCE_MATRIX.md` виконуваним на практиці
+- зробити `docs/governance/ARCH_COMPLIANCE_MATRIX.md` виконуваним на практиці
 - визначити мінімальний check bundle для локального запуску і CI
-- дати специфікацію для `check_arch_invariants.sh`
+- дати специфікацію для `scripts/check_arch_invariants.sh`
 
 Документ узгоджується з:
-- `ARCH_COMPLIANCE_MATRIX.md`
-- `CI_RULES.md`
-- `TEAM_WORKFLOW.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
+- `docs/governance/CI_RULES.md`
+- `docs/governance/TEAM_WORKFLOW.md`
 
 ---
 
@@ -40,7 +40,7 @@
 
 ## 4. Script contract
 
-`check_arch_invariants.sh` повинен:
+`scripts/check_arch_invariants.sh` повинен:
 - завершуватись `0`, якщо blocker violations відсутні
 - завершуватись non-zero, якщо знайдено blocker violations
 - показувати `rule_id`, file path і короткий remediation hint
@@ -82,4 +82,4 @@ fix: replace with abstract domain or port contract type
 - CMake graph validation
 - standalone public-header compile job
 - include dependency dump by component
-- optional whitelist/exception integration from `ADR_EXCEPTIONS.md`
+- optional whitelist/exception integration from `docs/governance/ADR_EXCEPTIONS.md`

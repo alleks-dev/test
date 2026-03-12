@@ -10,16 +10,16 @@
 - забезпечити швидкий feedback loop для skeleton/core development
 
 Документ узгоджується з:
-- `TEST_STRATEGY.md`
-- `DEPENDENCY_RULES.md`
-- `SKELETON_PLAN.md`
-- `CODING_GUIDELINES.md`
-- `ARCH_COMPLIANCE_MATRIX.md`
-- `ADR_EXCEPTIONS.md`
-- `ARCH_CHECKS.md`
-- `READ_MODEL_STRATEGY.md`
-- `RUNTIME_EXECUTION_MODEL.md`
-- `ASYNC_OPERATION_MODEL.md`
+- `docs/testing/TEST_STRATEGY.md`
+- `docs/architecture/DEPENDENCY_RULES.md`
+- `docs/planning/SKELETON_PLAN.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
+- `docs/governance/ADR_EXCEPTIONS.md`
+- `docs/governance/ARCH_CHECKS.md`
+- `docs/architecture/READ_MODEL_STRATEGY.md`
+- `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
+- `docs/architecture/ASYNC_OPERATION_MODEL.md`
 
 ---
 
@@ -69,8 +69,8 @@
 - no `core -> adapter` dependency
 - no `core -> ESP-IDF` include leakage
 - no `ports -> platform headers`
-- CMake dependency graph does not violate `DEPENDENCY_RULES.md`
-- `check_arch_invariants.sh` passes
+- CMake dependency graph does not violate `docs/architecture/DEPENDENCY_RULES.md`
+- `scripts/check_arch_invariants.sh` passes
 - violations are reported with stable `rule_id`
 - `scripts/run_blocking_local_checks.sh` remains aligned with the documented local bundle
 
@@ -112,7 +112,7 @@ Merge must be blocked if any of the following fail:
 - forbidden dependency/include checks
 - public headers compile
 - changed module has no corresponding test/compile coverage where required
-- blocker rule violation has no approved exception in `ADR_EXCEPTIONS.md`
+- blocker rule violation has no approved exception in `docs/governance/ADR_EXCEPTIONS.md`
 
 ---
 
@@ -130,7 +130,7 @@ CI повинен мати явні checks на:
 - app-facing APIs return snapshots/bounded results instead of live mutable runtime state where applicable
 - async runtime operations use explicit request/result identity where applicable
 
-Кожен architecture failure повинен посилатися на `rule_id` з `ARCH_COMPLIANCE_MATRIX.md`.
+Кожен architecture failure повинен посилатися на `rule_id` з `docs/governance/ARCH_COMPLIANCE_MATRIX.md`.
 
 ---
 
@@ -194,8 +194,8 @@ CI повинен перевіряти, що:
 ## 12. Memory and config checks
 
 CI повинен перевіряти:
-- config fields required by `CONFIG_SCHEMA.md`
-- budget constraints from `MEMORY_BUDGETS.md`
+- config fields required by `docs/architecture/CONFIG_SCHEMA.md`
+- budget constraints from `docs/architecture/MEMORY_BUDGETS.md`
 - no profile exceeds declared hard limits
 
 Nightly/pre-release additionally:
@@ -210,7 +210,7 @@ Nightly/pre-release additionally:
 - all declared components compile
 - all declared headers compile
 - fake test adapters compile
-- first 10 tests from `SKELETON_PLAN.md` stay green once introduced
+- first 10 tests from `docs/planning/SKELETON_PLAN.md` stay green once introduced
 
 At skeleton phase it is acceptable that:
 - many APIs still return `ERR_UNSUPPORTED_FEATURE`

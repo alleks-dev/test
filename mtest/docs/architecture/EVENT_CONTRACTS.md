@@ -10,10 +10,10 @@
 - визначити emitter, trigger point, ordering rules і test expectations
 
 Документ узгоджується з:
-- `ARCHITECTURE.md`
-- `TEST_STRATEGY.md`
-- `CODING_GUIDELINES.md`
-- `MODULE_CONTRACTS.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/testing/TEST_STRATEGY.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
 
 ---
 
@@ -322,9 +322,9 @@ Rules:
 ## 10. Change policy
 
 Будь-яка нова доменна подія повинна:
-- бути додана в `ARCHITECTURE.md`
+- бути додана в `docs/architecture/ARCHITECTURE.md`
 - отримати payload contract тут
-- отримати tests у `TEST_STRATEGY.md`
+- отримати tests у `docs/testing/TEST_STRATEGY.md`
 - бути оцінена на memory/observability impact
 
 ---

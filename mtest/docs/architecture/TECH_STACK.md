@@ -344,7 +344,7 @@ Build/profile policy не замінює runtime config schema versioning:
 
 ## 11. Рекомендована структура директорій
 
-Це **фізична реалізація** логічної модульної структури з `ARCHITECTURE.md`.
+Це **фізична реалізація** логічної модульної структури з `docs/architecture/ARCHITECTURE.md`.
 Логічні `/core`, `/ports`, `/adapters`, `/app` відображаються тут у `components/`,
 `main/` і `test/` відповідно до ESP-IDF component model.
 

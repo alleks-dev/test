@@ -10,29 +10,29 @@
 - прив'язати review до `rule_id`, а не до розмитих побажань
 
 Документ узгоджується з:
-- `ARCH_COMPLIANCE_MATRIX.md`
-- `CI_RULES.md`
-- `SKELETON_PLAN.md`
-- `TEST_STRATEGY.md`
-- `READ_MODEL_STRATEGY.md`
-- `RUNTIME_EXECUTION_MODEL.md`
-- `ASYNC_OPERATION_MODEL.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
+- `docs/governance/CI_RULES.md`
+- `docs/planning/SKELETON_PLAN.md`
+- `docs/testing/TEST_STRATEGY.md`
+- `docs/architecture/READ_MODEL_STRATEGY.md`
+- `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
+- `docs/architecture/ASYNC_OPERATION_MODEL.md`
 
 ---
 
 ## 2. Source of truth
 
 Архітектурним source of truth вважаються:
-- `ARCHITECTURE.md`
-- `MODULE_CONTRACTS.md`
-- `DEPENDENCY_RULES.md`
-- `ARCH_COMPLIANCE_MATRIX.md`
-- `CONFIG_SCHEMA.md`
-- `ERROR_MODEL.md`
-- `EVENT_CONTRACTS.md`
-- `READ_MODEL_STRATEGY.md`
-- `RUNTIME_EXECUTION_MODEL.md`
-- `ASYNC_OPERATION_MODEL.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/DEPENDENCY_RULES.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
+- `docs/architecture/CONFIG_SCHEMA.md`
+- `docs/architecture/ERROR_MODEL.md`
+- `docs/architecture/EVENT_CONTRACTS.md`
+- `docs/architecture/READ_MODEL_STRATEGY.md`
+- `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
+- `docs/architecture/ASYNC_OPERATION_MODEL.md`
 
 Якщо код або PR їм суперечить, пріоритет мають ці документи.
 
@@ -77,9 +77,9 @@
 - описувати зміну поведінки або зміну structure/contracts
 - явно згадувати exception, якщо він потрібен
 
-Якщо PR порушує правило з `ARCH_COMPLIANCE_MATRIX.md`, у ньому повинно бути:
+Якщо PR порушує правило з `docs/governance/ARCH_COMPLIANCE_MATRIX.md`, у ньому повинно бути:
 - `rule_id`
-- посилання на запис у `ADR_EXCEPTIONS.md`
+- посилання на запис у `docs/governance/ADR_EXCEPTIONS.md`
 
 ---
 

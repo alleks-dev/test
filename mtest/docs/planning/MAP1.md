@@ -1,6 +1,6 @@
 Щоб підняти архітектуру з `8.5` до `9.5`, потрібні не нові ідеї, а перехід від хорошої документації до enforceable design.
 
-1. Згенерувати мінімальний skeleton-код під `components/` і `include/ports/`, який реально дотримується [MODULE_CONTRACTS.md](/home/alex/dev/mtest/MODULE_CONTRACTS.md:1) і [DEPENDENCY_RULES.md](/home/alex/dev/mtest/DEPENDENCY_RULES.md:1).
+1. Згенерувати мінімальний skeleton-код під `components/` і `include/ports/`, який реально дотримується [MODULE_CONTRACTS.md](/home/alex/dev/mtest/docs/architecture/MODULE_CONTRACTS.md:1) і [DEPENDENCY_RULES.md](/home/alex/dev/mtest/docs/architecture/DEPENDENCY_RULES.md:1).
 
 2. Зафіксувати public API headers для всіх портів і ключових core-модулів.
 Потрібні хоча б чернеткові інтерфейси для `ISubscriptionIndex`, `IAclPolicy`, `IRouterPolicy`, `IFederationLink`, `IClock`, `ILogger`, `IMetrics`.

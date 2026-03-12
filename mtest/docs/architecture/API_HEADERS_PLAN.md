@@ -11,11 +11,11 @@
 - відокремити production API від test-only access seams
 
 Документ узгоджується з:
-- `MODULE_CONTRACTS.md`
-- `DEPENDENCY_RULES.md`
-- `SKELETON_PLAN.md`
-- `CODING_GUIDELINES.md`
-- `ARCH_COMPLIANCE_MATRIX.md`
+- `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/DEPENDENCY_RULES.md`
+- `docs/planning/SKELETON_PLAN.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
 
 ---
 
@@ -345,7 +345,7 @@ Reason:
 1. Чи немає ESP-IDF/platform includes у domain/ports/core headers
 2. Чи не протікають socket/storage/task handles
 3. Чи використовуються structured result types
-4. Чи відповідають names/contracts `MODULE_CONTRACTS.md`
+4. Чи відповідають names/contracts `docs/architecture/MODULE_CONTRACTS.md`
 5. Чи не став header “god header” для кількох layer boundaries
 
 ---

@@ -10,9 +10,9 @@
 - пов'язувати кожен виняток з конкретним `rule_id`
 
 Документ узгоджується з:
-- `ARCH_COMPLIANCE_MATRIX.md`
-- `CI_RULES.md`
-- `TEAM_WORKFLOW.md`
+- `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
+- `docs/governance/CI_RULES.md`
+- `docs/governance/TEAM_WORKFLOW.md`
 
 ---
 
