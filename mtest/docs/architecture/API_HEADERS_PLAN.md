@@ -25,6 +25,7 @@ This document aligns with:
 - headers in `include/ports/` must not include ESP-IDF/platform headers
 - headers in `include/*` should be as self-contained as reasonably possible
 - initial APIs may be minimal, but must not contradict module contracts
+- every new header must start with `// SPDX-License-Identifier: AGPL-3.0-only`
 - type names use `PascalCase`
 - function/method names use `snake_case` or one consistently chosen project-wide style
 

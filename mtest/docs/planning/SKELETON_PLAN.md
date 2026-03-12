@@ -46,6 +46,7 @@ Not required at this stage:
 Create:
 - `CMakeLists.txt`
 - `partitions.csv`
+- `LICENSE`
 - `sdkconfig.defaults`
 - `sdkconfig.defaults.n8r2`
 - `sdkconfig.defaults.n16r8`
@@ -93,6 +94,9 @@ First domain headers:
 - `delivery_target.hpp`
 - `result.hpp`
 - `domain_event.hpp`
+
+Each new source/header file created in the skeleton must start with:
+- `// SPDX-License-Identifier: AGPL-3.0-only`
 
 ### 5.2. Port headers
 
