@@ -294,6 +294,20 @@ Build/profile policy не замінює runtime config schema versioning:
 
 ---
 
+## 9.3. Runtime application seams
+
+На рівні physical stack потрібно відразу закласти:
+- вузький `runtime facade` для app-facing consumers
+- `read model coordinator` і dedicated snapshot builders для published views
+- `operation result store` для non-immediate runtime/admin actions
+
+Ці seams:
+- не є частиною protocol/routing/session core
+- належать до runtime/application layer
+- повинні бути host-testable без ESP-IDF runtime
+
+---
+
 ## 10. Recommended compile policy
 
 ### Для власних C++ компонентів
@@ -430,6 +444,11 @@ project/
       include/platform_runtime/
       src/
 
+    app_runtime/
+      CMakeLists.txt
+      include/app_runtime/
+      src/
+
   test/
     host/
     integration/
@@ -520,7 +539,22 @@ project/
 
 ---
 
-## 12.9. `ports`
+## 12.9. `app_runtime`
+
+Відповідає за:
+- runtime facade
+- read model coordinator
+- snapshot builders for app-facing views
+- async operation result store
+
+Не повинен:
+- тягнути protocol/routing/session business logic у facade layer
+- повертати live mutable internals назовні
+- змішувати side-effect execution policy з DTO mapping без окремих seams
+
+---
+
+## 12.10. `ports`
 
 Містить:
 - чисті інтерфейси
@@ -531,7 +565,7 @@ project/
 
 ---
 
-## 12.10. `transport_*`, `storage_*`, `platform_*`
+## 12.11. `transport_*`, `storage_*`, `platform_*`
 
 Це adapters, які:
 - перекладають platform API у доменні інтерфейси
@@ -734,6 +768,7 @@ target_compile_options(${COMPONENT_LIB} PRIVATE
 6. Є окремі build profiles для N8R2 і N16R8.
 7. Project structure відповідає component model.
 8. Memory policy явно враховує SRAM vs PSRAM.
+9. App-facing runtime seams зафіксовані окремо від core modules.
 
 ---
 

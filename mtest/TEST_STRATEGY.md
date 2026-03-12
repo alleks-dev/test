@@ -94,6 +94,9 @@
 - persistence restore
 - federation metadata propagation
 - anti-loop / dedup behavior
+- read-model snapshot behavior
+- reducer/effect flow behavior
+- async operation lifecycle behavior
 
 ### Що не можна вважати “достатньо перевіреним” без тестів
 
@@ -103,6 +106,8 @@
 - робота bridge/federation
 - поведінка при відновленні після перезапуску
 - контроль лімітів пам’яті та черг
+- snapshot consistency for app-facing APIs
+- explicit async completion/timeout behavior
 
 ---
 
@@ -122,6 +127,9 @@
 - federation policies
 - config validation
 - config version migration
+- read-model builders/coordinator
+- reducer/effect execution logic
+- async operation result store
 
 Це основний контур швидкого зворотного зв’язку.
 
@@ -265,6 +273,34 @@ Unit tests повинні бути наймасовішим класом тес�
 - event payload correctness for ids, `origin`, `scope`, route metadata
 - deterministic event ordering in single-threaded test scenarios
 
+### 6.12. Read models
+
+Перевірити:
+- snapshot build for empty state
+- snapshot rebuild after relevant state change
+- no live mutable state leakage through app-facing snapshots
+- bounded snapshot size under configured limits
+- deterministic DTO/view content for the same input state
+
+### 6.13. Reducer and effect flow
+
+Перевірити:
+- validated command/event produces deterministic transition result
+- effect plan is emitted explicitly and in deterministic order
+- reducer path does not require real I/O or platform runtime
+- effect completion is handled as explicit event/result, not hidden callback mutation
+- no side effects are executed inline where contract expects planning only
+
+### 6.14. Async operations
+
+Перевірити:
+- `request_id` generation uniqueness
+- queued -> in_progress -> completed path
+- failure path with explicit terminal status
+- timeout path with fake clock
+- bounded operation result store behavior
+- completed/expired operation cleanup rules
+
 ---
 
 ## 7. MQTT 5 readiness tests
@@ -383,7 +419,34 @@ Integration tests перевіряють взаємодію кількох мо�
 - reject incompatible config version
 - reject invalid normalized config
 
-### 9.6. Routing + Federation policy
+### 9.6. Read models + Runtime facade
+
+Сценарії:
+- runtime state changes
+- read model coordinator rebuilds affected snapshot
+- facade returns stable snapshot
+- caller does not observe live mutable internals
+- snapshot remains bounded under configured limits
+
+### 9.7. Runtime reducer + Effect executor
+
+Сценарії:
+- command enters reducer path
+- deterministic effect plan is produced
+- effect executor performs side effects outside reducer
+- completion/error returns as explicit event/result
+- resulting state and emitted events remain deterministic
+
+### 9.8. Async operation flow
+
+Сценарії:
+- caller submits async operation
+- runtime allocates `request_id`
+- operation result store exposes `queued`/`in_progress`
+- completion publishes final result
+- timeout path transitions to terminal timeout state
+
+### 9.9. Routing + Federation policy
 
 Сценарії:
 - local only route
@@ -392,7 +455,7 @@ Integration tests перевіряють взаємодію кількох мо�
 - namespace export/import rules
 - `ForwardRequested` emitted only when federation policy allows forwarding
 
-### 9.7. Event sequencing and capture
+### 9.10. Event sequencing and capture
 
 Сценарії:
 - rejected publish does not emit delivery/forward events
@@ -635,6 +698,9 @@ Performance tests не замінюють correctness tests.
 - config validation
 - config migration tests
 - core integration tests
+- read-model tests
+- reducer/effect flow tests
+- async operation tests
 
 ### Nightly
 
@@ -724,11 +790,12 @@ Performance tests не замінюють correctness tests.
 
 1. Є повний unit coverage для critical core logic.
 2. Є integration tests для session/qos/retained/routing.
-3. Є simulation tests для broker link і federation.
-4. Є fault tests для reconnect, storage і memory pressure.
-5. Є soak tests мінімум на 24 години перед release.
-6. Є окремі бюджети й порогові перевірки для N8R2 і N16R8.
-7. Кожен баг має regression test.
+3. Є окремі test areas для read-models, reducer/effect flow і async operations.
+4. Є simulation tests для broker link і federation.
+5. Є fault tests для reconnect, storage і memory pressure.
+6. Є soak tests мінімум на 24 години перед release.
+7. Є окремі бюджети й порогові перевірки для N8R2 і N16R8.
+8. Кожен баг має regression test.
 
 ---
 

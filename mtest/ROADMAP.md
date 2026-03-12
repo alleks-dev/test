@@ -109,12 +109,21 @@ Federation повинна з’являтися як:
 - `TEST_STRATEGY.md`
 - `MODULE_CONTRACTS.md`
 - `DEPENDENCY_RULES.md`
+- `ARCH_COMPLIANCE_MATRIX.md`
+- `ADR_EXCEPTIONS.md`
+- `TEAM_WORKFLOW.md`
+- `ARCH_CHECKS.md`
+- `READ_MODEL_STRATEGY.md`
+- `RUNTIME_EXECUTION_MODEL.md`
+- `ASYNC_OPERATION_MODEL.md`
 - `MEMORY_BUDGETS.md`
 - `CONFIG_SCHEMA.md`
 - `ERROR_MODEL.md`
 - `EVENT_CONTRACTS.md`
 - `API_HEADERS_PLAN.md`
 - `CI_RULES.md`
+- `check_arch_invariants.sh`
+- `scripts/run_blocking_local_checks.sh`
 - `ROADMAP.md`
 - базові domain type definitions
 - agreed naming conventions
@@ -126,6 +135,10 @@ Federation повинна з’являтися як:
 - зафіксовані `origin`, `scope`, `flags`
 - зафіксовані memory budgets high-level
 - є мінімальний skeleton проекту
+- є architecture compliance matrix з `rule_id`
+- є exception process для тимчасових відхилень
+- є локальний architecture check bundle
+- є documented read-model, runtime execution і async operation strategy
 
 ---
 

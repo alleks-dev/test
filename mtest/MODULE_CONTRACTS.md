@@ -15,6 +15,9 @@
 - `CODING_GUIDELINES.md`
 - `TEST_STRATEGY.md`
 - `ROADMAP.md`
+- `READ_MODEL_STRATEGY.md`
+- `RUNTIME_EXECUTION_MODEL.md`
+- `ASYNC_OPERATION_MODEL.md`
 
 ---
 
@@ -62,6 +65,20 @@ Application/runtime:
 Якщо модуль не є thread-safe:
 - це повинно бути явно задокументовано
 - synchronization не повинен “протікати” через API
+
+### 2.5. Read-model contract
+
+App-facing APIs:
+- повинні повертати snapshots, DTOs або bounded query results
+- не повинні розкривати mutable live internals
+- повинні будуватися через dedicated facade/builder/coordinator seams where needed
+
+### 2.6. Async operation contract
+
+Якщо API запускає non-immediate operation:
+- повинен існувати `request_id` або equivalent operation identity
+- completion/error має бути observable через explicit result contract
+- timeout/failure state не повинен залишатися implicit
 
 ---
 
@@ -152,6 +169,10 @@ Allowed dependencies:
 - domain types
 - core modules
 - ports
+
+Runtime/application note:
+- app-facing access to broker state must go through runtime facade/read-model seams
+- async admin/runtime operations must not be hidden inside broker_core without explicit request/result contract
 
 ### 4.2. `protocol_mqtt`
 
@@ -412,6 +433,114 @@ Allowed dependencies:
 - domain types
 - `IFederationLink`
 - `IRouterPolicy`
+
+### 4.9. `runtime_facade`
+
+Responsibility:
+- expose app-facing runtime API
+- return snapshots, DTOs and bounded query results
+- isolate admin/inspection consumers from concrete runtime internals
+
+Inputs:
+- published read models
+- operation result lookups
+- normalized runtime/application requests
+
+Outputs:
+- status/config/session/diagnostics snapshots
+- bounded operation-status responses
+
+Ownership:
+- does not transfer ownership of live mutable runtime state
+- may return copies or immutable views as documented by contract
+
+Errors:
+- snapshot unavailable
+- operation not found
+- invalid app-facing request
+
+Threading:
+- may be called from application/runtime layer
+- must not require caller-owned locks
+
+Testability:
+- host-side tests must verify stable snapshot/result behavior
+
+Allowed dependencies:
+- read-model seams
+- async operation seams
+- domain-safe DTO types
+
+### 4.10. `read_model_coordinator`
+
+Responsibility:
+- manage invalidate/rebuild/publish flow for read models
+- coordinate snapshot builders
+- publish stable app-facing snapshots after relevant runtime changes
+
+Inputs:
+- relevant state-change notifications
+- state fragments and runtime summaries needed for projection
+
+Outputs:
+- published snapshots
+- rebuild/invalidate decisions
+
+Ownership:
+- does not own authoritative domain state
+- owns only read-model caches/storage allowed by memory policy
+
+Errors:
+- snapshot rebuild failure
+- bounded cache/storage overflow
+
+Threading:
+- must preserve deterministic publication behavior
+- should not expose mutable cache internals to consumers
+
+Testability:
+- host-side tests must verify rebuild triggers and snapshot stability
+
+Allowed dependencies:
+- snapshot builders
+- domain-safe snapshot DTOs
+- runtime/application utilities
+
+### 4.11. `operation_result_store`
+
+Responsibility:
+- generate `request_id` for async operations
+- track queued/in-progress/completed/failed/timed_out operations
+- expose bounded poll/query contract for operation results
+
+Inputs:
+- operation submission metadata
+- completion/error updates
+- timeout signals
+
+Outputs:
+- request identifiers
+- current operation status
+- terminal result/error payloads where applicable
+
+Ownership:
+- owns bounded transient operation tracking state
+- must not absorb long-lived domain state
+
+Errors:
+- queue/store full
+- unknown request id
+- timeout or failed operation terminal status
+
+Threading:
+- must preserve explicit terminal states and deterministic query semantics
+
+Testability:
+- host-side tests must verify request id generation, timeout handling and cleanup
+
+Allowed dependencies:
+- domain-safe result/status DTOs
+- clock/timer abstraction where needed
 
 ---
 

@@ -14,6 +14,12 @@
 - `DEPENDENCY_RULES.md`
 - `SKELETON_PLAN.md`
 - `CODING_GUIDELINES.md`
+- `ARCH_COMPLIANCE_MATRIX.md`
+- `ADR_EXCEPTIONS.md`
+- `ARCH_CHECKS.md`
+- `READ_MODEL_STRATEGY.md`
+- `RUNTIME_EXECUTION_MODEL.md`
+- `ASYNC_OPERATION_MODEL.md`
 
 ---
 
@@ -64,6 +70,9 @@
 - no `core -> ESP-IDF` include leakage
 - no `ports -> platform headers`
 - CMake dependency graph does not violate `DEPENDENCY_RULES.md`
+- `check_arch_invariants.sh` passes
+- violations are reported with stable `rule_id`
+- `scripts/run_blocking_local_checks.sh` remains aligned with the documented local bundle
 
 ---
 
@@ -103,6 +112,7 @@ Merge must be blocked if any of the following fail:
 - forbidden dependency/include checks
 - public headers compile
 - changed module has no corresponding test/compile coverage where required
+- blocker rule violation has no approved exception in `ADR_EXCEPTIONS.md`
 
 ---
 
@@ -115,6 +125,12 @@ CI повинен мати явні checks на:
 - `protocol_mqtt` does not depend on routing/acl/session/storage adapters
 - `routing` does not depend on transport/storage adapters
 - `main`/runtime is the composition root, not a policy engine
+- production public headers do not contain macro-gated test hooks
+- test-only runtime access is exposed only through dedicated `*_test_access.hpp` seams where needed
+- app-facing APIs return snapshots/bounded results instead of live mutable runtime state where applicable
+- async runtime operations use explicit request/result identity where applicable
+
+Кожен architecture failure повинен посилатися на `rule_id` з `ARCH_COMPLIANCE_MATRIX.md`.
 
 ---
 
@@ -130,11 +146,17 @@ CI повинен мати явні checks на:
 - QoS timeout/retry with fake clock
 - config schema parse/migration
 - event model emission/order
+- read-model snapshot build/rebuild correctness
+- reducer/effect plan determinism
+- async operation request/result lifecycle
 
 ### 9.2. Integration
 
 - protocol + session + routing
 - config loader + validation
+- read models + runtime facade
+- runtime reducer + effect executor
+- async operation flow
 - routing + federation policy
 - session + persistence
 
@@ -205,6 +227,7 @@ CI failure output повинно чітко показувати:
 - which check failed
 - whether failure is compile/test/style/dependency/category
 - which module/component is affected
+- which `rule_id` was violated for architecture failures
 
 Avoid:
 - one giant opaque CI step
@@ -218,6 +241,7 @@ Reviewer should not approve if CI is green but:
 - dependency violation is known and ignored
 - tests are clearly missing for changed behavior
 - compile checks do not cover changed public API
+- architecture exception is undocumented or expired
 
 Green CI is necessary, not sufficient.
 

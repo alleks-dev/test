@@ -8,12 +8,14 @@
 - перевести модульні контракти в конкретні `include/` файли
 - зафіксувати мінімальний набір headers для першого compileable skeleton
 - не допустити platform leakage в public API
+- відокремити production API від test-only access seams
 
 Документ узгоджується з:
 - `MODULE_CONTRACTS.md`
 - `DEPENDENCY_RULES.md`
 - `SKELETON_PLAN.md`
 - `CODING_GUIDELINES.md`
+- `ARCH_COMPLIANCE_MATRIX.md`
 
 ---
 

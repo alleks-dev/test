@@ -124,6 +124,18 @@ Rules:
 - public headers expose contracts, not internal platform details
 - initial methods may be stubbed but signatures must respect `MODULE_CONTRACTS.md`
 
+### 5.4. Test-only access headers
+
+Якщо модулю потрібен test-only seam, він повинен створюватися окремо:
+- `broker_core_test_access.hpp`
+- `session_test_access.hpp`
+- `routing_test_access.hpp`
+
+Rules:
+- production code не повинен залежати від цих headers
+- вони не замінюють нормальні public contracts
+- вони використовуються лише там, де fake ports/black-box tests недостатні
+
 ---
 
 ## 6. Порядок створення модулів
@@ -217,6 +229,9 @@ Milestone вважається досягнутим, якщо:
 ---
 
 ## 11. Early CMake rules
+
+- architecture check target повинен існувати рано, навіть якщо codebase ще мала
+- `check_arch_invariants.sh` має входити в локальний і CI bootstrap bundle
 
 На старті:
 - `ports` independent component
