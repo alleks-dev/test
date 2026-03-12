@@ -1,12 +1,16 @@
 # Documentation Index
 
-Цей каталог містить нормативну документацію MQTT-брокера для ESP32-S3.
+This directory contains the normative documentation set for the ESP32-S3 MQTT broker.
 
 ## Structure
 
+Cross-document terminology reference:
+- [GLOSSARY.md](/home/alex/dev/mtest/docs/GLOSSARY.md)
+
+
 ### `architecture/`
 
-Тут знаходяться архітектурні й технічні контракти:
+Architecture and technical contracts:
 - [ARCHITECTURE.md](/home/alex/dev/mtest/docs/architecture/ARCHITECTURE.md)
 - [TECH_STACK.md](/home/alex/dev/mtest/docs/architecture/TECH_STACK.md)
 - [CODING_GUIDELINES.md](/home/alex/dev/mtest/docs/architecture/CODING_GUIDELINES.md)
@@ -23,7 +27,7 @@
 
 ### `governance/`
 
-Тут знаходяться правила enforcement і командний процес:
+Enforcement rules and team process:
 - [ARCH_COMPLIANCE_MATRIX.md](/home/alex/dev/mtest/docs/governance/ARCH_COMPLIANCE_MATRIX.md)
 - [ADR_EXCEPTIONS.md](/home/alex/dev/mtest/docs/governance/ADR_EXCEPTIONS.md)
 - [ARCH_CHECKS.md](/home/alex/dev/mtest/docs/governance/ARCH_CHECKS.md)
@@ -32,12 +36,12 @@
 
 ### `testing/`
 
-Тут знаходиться тестова стратегія:
+Testing strategy:
 - [TEST_STRATEGY.md](/home/alex/dev/mtest/docs/testing/TEST_STRATEGY.md)
 
 ### `planning/`
 
-Тут знаходяться roadmap і практичні implementation plans:
+Roadmap and implementation planning:
 - [ROADMAP.md](/home/alex/dev/mtest/docs/planning/ROADMAP.md)
 - [SKELETON_PLAN.md](/home/alex/dev/mtest/docs/planning/SKELETON_PLAN.md)
 - [MAP1.md](/home/alex/dev/mtest/docs/planning/MAP1.md)
@@ -46,12 +50,13 @@
 
 1. [ARCHITECTURE.md](/home/alex/dev/mtest/docs/architecture/ARCHITECTURE.md)
 2. [TECH_STACK.md](/home/alex/dev/mtest/docs/architecture/TECH_STACK.md)
-3. [MODULE_CONTRACTS.md](/home/alex/dev/mtest/docs/architecture/MODULE_CONTRACTS.md)
-4. [DEPENDENCY_RULES.md](/home/alex/dev/mtest/docs/architecture/DEPENDENCY_RULES.md)
-5. [TEST_STRATEGY.md](/home/alex/dev/mtest/docs/testing/TEST_STRATEGY.md)
-6. [ARCH_COMPLIANCE_MATRIX.md](/home/alex/dev/mtest/docs/governance/ARCH_COMPLIANCE_MATRIX.md)
-7. [CI_RULES.md](/home/alex/dev/mtest/docs/governance/CI_RULES.md)
-8. [ROADMAP.md](/home/alex/dev/mtest/docs/planning/ROADMAP.md)
+3. [GLOSSARY.md](/home/alex/dev/mtest/docs/GLOSSARY.md)
+4. [MODULE_CONTRACTS.md](/home/alex/dev/mtest/docs/architecture/MODULE_CONTRACTS.md)
+5. [DEPENDENCY_RULES.md](/home/alex/dev/mtest/docs/architecture/DEPENDENCY_RULES.md)
+6. [TEST_STRATEGY.md](/home/alex/dev/mtest/docs/testing/TEST_STRATEGY.md)
+7. [ARCH_COMPLIANCE_MATRIX.md](/home/alex/dev/mtest/docs/governance/ARCH_COMPLIANCE_MATRIX.md)
+8. [CI_RULES.md](/home/alex/dev/mtest/docs/governance/CI_RULES.md)
+9. [ROADMAP.md](/home/alex/dev/mtest/docs/planning/ROADMAP.md)
 
 ## Entry points by task
 
@@ -60,7 +65,7 @@
   [MODULE_CONTRACTS.md](/home/alex/dev/mtest/docs/architecture/MODULE_CONTRACTS.md),
   [DEPENDENCY_RULES.md](/home/alex/dev/mtest/docs/architecture/DEPENDENCY_RULES.md)
 
-- If you are changing runtime/config/error behavior:
+- If you are changing runtime, config, or error behavior:
   [CONFIG_SCHEMA.md](/home/alex/dev/mtest/docs/architecture/CONFIG_SCHEMA.md),
   [ERROR_MODEL.md](/home/alex/dev/mtest/docs/architecture/ERROR_MODEL.md),
   [RUNTIME_EXECUTION_MODEL.md](/home/alex/dev/mtest/docs/architecture/RUNTIME_EXECUTION_MODEL.md),

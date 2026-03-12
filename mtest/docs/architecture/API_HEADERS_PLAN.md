@@ -1,16 +1,16 @@
 # API_HEADERS_PLAN.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ описує план створення public API headers для MQTT-брокера.
+This document defines the plan for creating public API headers for the MQTT broker.
 
-Його цілі:
-- перевести модульні контракти в конкретні `include/` файли
-- зафіксувати мінімальний набір headers для першого compileable skeleton
-- не допустити platform leakage в public API
-- відокремити production API від test-only access seams
+Its goals are to:
+- translate module contracts into concrete `include/` files
+- define the minimal header set for the first compilable skeleton
+- prevent platform leakage through the public API
+- separate production API from test-only access seams
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/architecture/MODULE_CONTRACTS.md`
 - `docs/architecture/DEPENDENCY_RULES.md`
 - `docs/planning/SKELETON_PLAN.md`
@@ -19,20 +19,20 @@
 
 ---
 
-## 2. Загальні правила
+## 2. General rules
 
-- public headers описують contracts, а не implementation details
-- headers у `include/ports/` не включають ESP-IDF/platform headers
-- headers у `include/*` повинні бути самодостатніми настільки, наскільки це можливо
-- initial APIs можуть бути мінімальними, але не повинні суперечити модульним контрактам
-- імена типів: `PascalCase`
-- імена функцій/методів: `snake_case` або вибраний єдиний стиль
+- public headers define contracts, not implementation details
+- headers in `include/ports/` must not include ESP-IDF/platform headers
+- headers in `include/*` should be as self-contained as reasonably possible
+- initial APIs may be minimal, but must not contradict module contracts
+- type names use `PascalCase`
+- function/method names use `snake_case` or one consistently chosen project-wide style
 
 ---
 
 ## 3. Root include layout
 
-Початковий layout:
+Initial layout:
 
 ```text
 components/
@@ -45,17 +45,18 @@ components/
   retained/include/retained/
   qos/include/qos/
   federation/include/federation/
+  app_runtime/include/app_runtime/
 ```
 
 ---
 
-## 4. Перші domain headers
+## 4. First domain headers
 
-Ці headers повинні бути створені першими, бо на них спираються ports і core.
+These headers must be created first because ports and core depend on them.
 
 ### 4.1. `message.hpp`
 
-Повинен містити:
+Must contain:
 - `Message`
 - `MessageId`
 - `MessageOrigin`
@@ -65,39 +66,39 @@ components/
 
 ### 4.2. `subscription.hpp`
 
-Повинен містити:
+Must contain:
 - `Subscription`
 - `SubscriptionOwnerType`
 - `SubscriptionId` if needed
 
 ### 4.3. `delivery_target.hpp`
 
-Повинен містити:
+Must contain:
 - `DeliveryTarget`
 - `DeliveryTargetType`
 
 ### 4.4. `result.hpp`
 
-Повинен містити:
+Must contain:
 - `ResultCode`
 - `Severity`
 - `Status`
-- `Result<T, E>` або `Expected<T, E>` wrapper choice
+- `Result<T, E>` or `Expected<T, E>` wrapper choice
 
 ### 4.5. `domain_event.hpp`
 
-Повинен містити:
+Must contain:
 - `DomainEventType`
 - `DomainEvent`
 - common event metadata fields
 
 ---
 
-## 5. Перші port headers
+## 5. First port headers
 
 ### 5.1. `transport_endpoint_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `ITransportEndpoint`
 - endpoint state/result primitives
 
@@ -109,7 +110,7 @@ Minimal methods to draft:
 
 ### 5.2. `transport_listener_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `ITransportListener`
 
 Minimal methods to draft:
@@ -118,7 +119,7 @@ Minimal methods to draft:
 
 ### 5.3. `session_store_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `ISessionStore`
 - session snapshot value types
 
@@ -129,7 +130,7 @@ Minimal methods to draft:
 
 ### 5.4. `retained_store_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `IRetainedStore`
 - retained entry metadata types
 
@@ -140,20 +141,21 @@ Minimal methods to draft:
 
 ### 5.5. `subscription_index_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `ISubscriptionIndex`
-- lookup result/view types
+- subscription view or query result types
 
 Minimal methods to draft:
 - `add_subscription(...)`
 - `remove_subscription(...)`
-- `match_subscriptions(...)`
+- `query_matching(...)`
+- `query_by_owner(...)`
 
 ### 5.6. `acl_policy_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `IAclPolicy`
-- `AclDecision`
+- ACL decision result type
 
 Minimal methods to draft:
 - `can_publish(...)`
@@ -161,199 +163,247 @@ Minimal methods to draft:
 
 ### 5.7. `router_policy_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `IRouterPolicy`
-- `RoutePolicyDecision`
+- route-policy decision/result types
 
 Minimal methods to draft:
-- `should_deliver_local(...)`
-- `should_forward_remote(...)`
+- `evaluate_route(...)`
+- `should_forward(...)`
 
 ### 5.8. `clock_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `IClock`
-- timestamp/duration types chosen for project
+- time-point/tick abstraction as needed
 
 Minimal methods to draft:
-- `now()`
+- `now_ms()`
+- `monotonic_ms()` or one consistent clock contract
 
 ### 5.9. `logger_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `ILogger`
-- log record/value types
+- structured log field/value primitives where needed
 
 Minimal methods to draft:
 - `log(...)`
 
 ### 5.10. `metrics_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `IMetrics`
 
 Minimal methods to draft:
-- `increment_counter(...)`
-- `set_gauge(...)`
+- `counter_inc(...)`
+- `gauge_set(...)`
+- `histogram_observe(...)` if included in the first metrics contract
 
 ### 5.11. `federation_link_port.hpp`
 
-Повинен оголошувати:
+Must declare:
 - `IFederationLink`
-- federation message envelope if needed
+- remote message/subscription transfer result types
 
 Minimal methods to draft:
 - `send_remote_publish(...)`
-- `send_subscription_update(...)`
+- `send_remote_subscription(...)`
 - `state()`
 
 ---
 
-## 6. Перші core public headers
+## 6. First app-runtime headers
 
-### 6.1. `broker_core.hpp`
+### 6.1. `runtime_facade.hpp`
 
-Повинен оголошувати:
-- `BrokerCore`
-- minimal construction/configuration boundary
+Must declare:
+- app-facing runtime facade contract
+- snapshot-returning API surface
 
-Не повинен:
-- expose ESP-IDF/runtime handles
+Minimal methods to draft:
+- `get_status_snapshot(...)`
+- `get_config_snapshot(...)`
+- `get_operation_status(...)`
 
-### 6.2. `protocol_mqtt.hpp`
+### 6.2. `read_model_coordinator.hpp`
 
-Повинен оголошувати:
-- protocol parse/serialize entry points
-- protocol config limit struct
+Must declare:
+- read-model rebuild/publish coordination contract
 
-### 6.3. `routing.hpp`
+Minimal methods to draft:
+- `invalidate(...)`
+- `rebuild_if_needed(...)`
+- `publish(...)`
 
-Повинен оголошувати:
+### 6.3. `operation_result_store.hpp`
+
+Must declare:
+- async operation request/result tracking contract
+
+Minimal methods to draft:
+- `next_request_id()`
+- `publish_result(...)`
+- `get_status(...)`
+- `cleanup_expired(...)`
+
+---
+
+## 7. First core public headers
+
+### 7.1. `broker_core.hpp`
+
+Should expose:
+- minimal broker lifecycle API
+- command/event entry points
+- runtime-independent construction contract
+
+### 7.2. `protocol_mqtt.hpp`
+
+Should expose:
+- packet parse/serialize API
+- protocol command/result types
+
+### 7.3. `routing.hpp`
+
+Should expose:
+- routing entry point
 - `RoutePlan`
-- `route_message(...)`
+- bounded route result types
 
-### 6.4. `acl.hpp`
+### 7.4. `acl.hpp`
 
-Повинен оголошувати:
-- ACL evaluation entry points if module has public surface beyond port
+Should expose:
+- ACL evaluation entry point if there is a concrete core ACL module API
 
-### 6.5. `session.hpp`
+### 7.5. `session.hpp`
 
-Повинен оголошувати:
-- session create/resume/update API
+Should expose:
+- session lifecycle entry points
+- restore result types
 
-### 6.6. `retained.hpp`
+### 7.6. `retained.hpp`
 
-Повинен оголошувати:
-- retained put/get/delete API
+Should expose:
+- retained lookup/update/delete API
 
-### 6.7. `qos.hpp`
+### 7.7. `qos.hpp`
 
-Повинен оголошувати:
-- QoS inflight/retry API
+Should expose:
+- QoS inflight/retry state transition API
 
-### 6.8. `federation.hpp`
+### 7.8. `federation.hpp`
 
-Повинен оголошувати:
+Should expose:
 - federation policy entry points
+- forwarding decision/result types
 
 ---
 
-## 7. Include policy for first headers
+## 8. Test-only access headers
 
-### Allowed in domain headers
+If a module needs test-only access, it must be defined in a separate header, for example:
+- `broker_core_test_access.hpp`
+- `routing_test_access.hpp`
+- `session_test_access.hpp`
+- `protocol_mqtt_test_access.hpp`
 
-- standard utility headers
-- other domain headers
-
-### Allowed in port headers
-
-- domain headers
-- `result.hpp`
-
-### Not allowed in port headers
-
-- adapter headers
-- ESP-IDF headers
-- socket/task/storage native types
-
-### Allowed in core public headers
-
-- domain headers
-- port headers
-
-### Not allowed in core public headers
-
-- adapter headers
-- ESP-IDF headers
-- platform-specific typedef leakage
+Rules:
+- production headers must not contain macro-gated test APIs
+- test-only access headers are allowed only for internal state that cannot be tested cleanly through normal ports/contracts
+- production code must not depend on them
 
 ---
 
-## 8. Forward declaration policy
+## 9. Include policy
+
+### 9.1. General policy
+
+Public headers should:
+- include only what they need
+- prefer forward declarations when ownership and ABI allow it
+- avoid transitive dependency explosions
+
+### 9.2. Forbidden in public headers
+
+- ESP-IDF headers
+- FreeRTOS headers
+- lwIP headers
+- socket headers
+- NVS handles/types
+- platform-specific opaque runtime internals
+
+### 9.3. Allowed in public headers
+
+- standard fixed-size types
+- bounded utility types from the approved STL subset
+- domain-safe enums and structs
+- other public contract headers where necessary
+
+---
+
+## 10. Standalone compile rule
+
+All public headers must compile standalone in a host environment.
+
+This means:
+- a header must not rely on include order magic
+- a header must not assume some platform header was included earlier
+- a header must not require ESP-IDF build context to parse
+
+This is a CI requirement, not a recommendation.
+
+---
+
+## 11. Forward declaration policy
 
 Prefer forward declarations when:
-- only pointer/reference/interface handle is needed
-- it reduces compile-time coupling
+- only pointers/references/views are exposed
+- no inline methods require the full definition
+- ownership/lifetime semantics remain clear
 
-Prefer full include when:
-- value semantics require complete type
-- template wrapper or inline methods need full definition
-
-Do not use forward declarations to hide broken layering.
-
----
-
-## 9. First-pass signature policy
-
-На першому проході API signatures повинні:
-- бути мінімальними
-- повертати `Status` або `Result<T, E>`
-- використовувати bounded views/refs instead of uncontrolled ownership transfer
-- уникати більше ніж 4-5 scalar args without context struct
+Do not use forward declarations when:
+- the type is returned by value
+- layout is part of the contract
+- inlining requires full type knowledge
 
 ---
 
-## 10. Header creation order
+## 12. Header creation order
 
-Рекомендований порядок:
-1. `result.hpp`
-2. `message.hpp`
-3. `subscription.hpp`
-4. `delivery_target.hpp`
-5. `domain_event.hpp`
-6. all `ports/*.hpp`
-7. `routing.hpp`
-8. `acl.hpp`
-9. `session.hpp`
-10. `retained.hpp`
-11. `qos.hpp`
-12. `protocol_mqtt.hpp`
-13. `federation.hpp`
-14. `broker_core.hpp`
+Recommended order:
+1. domain headers
+2. result/error primitives
+3. event primitives
+4. port headers
+5. app-runtime headers
+6. core public headers
+7. test-only access headers where truly necessary
 
 Reason:
-- result/domain types unblock all other headers
-- ports stabilize public boundaries
-- `broker_core.hpp` should be composed after dependent surfaces exist
+- contracts must stabilize before concrete implementations
+- app/runtime seams must be created before admin or inspection code depends on them
+- test seams should be introduced only after normal public contracts are defined
 
 ---
 
-## 11. First review checklist
+## 13. Initial review checklist for headers
 
-При рев’ю перших API headers перевіряти:
-1. Чи немає ESP-IDF/platform includes у domain/ports/core headers
-2. Чи не протікають socket/storage/task handles
-3. Чи використовуються structured result types
-4. Чи відповідають names/contracts `docs/architecture/MODULE_CONTRACTS.md`
-5. Чи не став header “god header” для кількох layer boundaries
+Every new public header should be reviewed for:
+- does it expose only contract-level data
+- does it leak platform types
+- are ownership rules clear
+- can it compile standalone
+- does it preserve clean layering
+- does it require a separate test-access header instead of a macro hook
 
 ---
 
-## 12. Definition of Done
+## 14. Definition of Done for API headers plan
 
-API headers plan вважається реалізованим, якщо:
-- усі first-pass public headers створені
-- вони компілюються в host build
-- ports/core headers не порушують dependency rules
-- signatures достатні для створення stub implementations і fake adapters
+This plan is considered correctly established if:
+- the first header set is ordered and scoped
+- public headers are aligned with module contracts
+- port headers are platform-free
+- app-runtime seams are explicitly represented
+- test-only access is separated from production API

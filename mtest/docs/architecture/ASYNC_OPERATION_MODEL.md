@@ -1,15 +1,15 @@
 # ASYNC_OPERATION_MODEL.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ описує модель асинхронних операцій для MQTT-брокера.
+This document defines the asynchronous operation model for the MQTT broker.
 
-Його цілі:
-- зробити async admin/runtime operations testable і deterministic
-- уникнути хаотичних callback-only APIs
-- дати основу для request/result tracking, polling і diagnostics
+Its goals are to:
+- make async admin/runtime operations testable and deterministic
+- avoid chaotic callback-only APIs
+- provide a basis for request/result tracking, polling, and diagnostics
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/architecture/MODULE_CONTRACTS.md`
 - `docs/architecture/ERROR_MODEL.md`
 - `docs/architecture/READ_MODEL_STRATEGY.md`
@@ -17,14 +17,14 @@
 
 ---
 
-## 2. Коли потрібна async operation model
+## 2. When an async operation model is required
 
-Вона потрібна для операцій, які:
-- не завершуються миттєво
-- залежать від transport/storage/runtime scheduling
-- можуть потребувати retry, timeout або later completion
+It is required for operations that:
+- do not complete immediately
+- depend on transport/storage/runtime scheduling
+- may need retry, timeout, or later completion
 
-Приклади:
+Examples:
 - config apply
 - persistence flush/recovery
 - bridge/federation reconnect actions
@@ -32,9 +32,9 @@
 
 ---
 
-## 3. Основний контракт
+## 3. Core contract
 
-Асинхронна операція повинна мати:
+Every asynchronous operation must have:
 - `request_id`
 - `operation_type`
 - `submitted_at`
@@ -42,7 +42,7 @@
 - optional `result payload`
 - optional `error/status code`
 
-Рекомендовані стани:
+Recommended states:
 - `queued`
 - `in_progress`
 - `completed`
@@ -54,65 +54,65 @@
 
 ## 4. Operation result store
 
-Система повинна мати окремий `operation result store` або equivalent seam, який:
-- генерує `request_id`
-- приймає completions/results
-- дозволяє bounded query/poll by `request_id`
-- не змішує unrelated operation families без reason
+The system must have a separate `operation result store` or equivalent seam that:
+- generates `request_id`
+- accepts completions/results
+- allows bounded query/poll by `request_id`
+- does not mix unrelated operation families without reason
 
-Цей store:
-- не є business-policy engine
-- не повинен знати platform details
-- повинен бути bounded by config/memory policy
+This store:
+- is not a business-policy engine
+- must not know platform details
+- must be bounded by config/memory policy
 
 ---
 
 ## 5. Integration with runtime
 
-Рекомендований flow:
-1. caller submits operation
-2. runtime validates and creates `request_id`
-3. executor/process performs work
+Recommended flow:
+1. the caller submits an operation
+2. runtime validates it and creates a `request_id`
+3. an executor/process performs the work
 4. completion/error is published back
-5. result store exposes final status to caller or facade
+5. the result store exposes final status to the caller or facade
 
-Async completion не повинно оновлювати caller-visible state "магічно" без request/result traceability.
+Async completion must not update caller-visible state "magically" without request/result traceability.
 
 ---
 
 ## 6. Polling and notification policy
 
-Допустимі моделі:
+Allowed models:
 - bounded polling by `request_id`
 - event-driven notification
 - hybrid model
 
-Недопустимі:
+Not allowed:
 - ad-hoc global flags
 - raw pointer callbacks as the only contract
-- shared mutable output buffers owned by caller
+- shared mutable output buffers owned by the caller
 
 ---
 
 ## 7. Error and timeout rules
 
-Кожна async operation повинна мати:
-- explicit timeout policy
-- explicit error/status code on failure
-- deterministic terminal state
+Every async operation must have:
+- an explicit timeout policy
+- an explicit error/status code on failure
+- a deterministic terminal state
 
-Якщо completion не приходить:
-- operation переходить у `timed_out`
-- caller не повинен чекати безмежно
+If completion never arrives:
+- the operation transitions to `timed_out`
+- the caller must not wait indefinitely
 
 ---
 
 ## 8. Testability rules
 
-Потрібні тести на:
-- request id generation uniqueness
+Required tests:
+- unique request ID generation
 - success/failure completion paths
-- timeout transition with fake clock
+- timeout transition with a fake clock
 - bounded queue/store behavior
 - cleanup of completed/expired records
 
@@ -120,8 +120,8 @@ Async completion не повинно оновлювати caller-visible state "
 
 ## 9. Anti-patterns
 
-Заборонено:
-- async API без request/result identity
+Forbidden:
+- async APIs without request/result identity
 - completion only through logs
 - unbounded result queues
-- змішування transient operation state з long-lived domain state
+- mixing transient operation state with long-lived domain state

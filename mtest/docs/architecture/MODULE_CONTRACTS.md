@@ -1,15 +1,15 @@
 # MODULE_CONTRACTS.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ фіксує нормативні контракти модулів MQTT-брокера для ESP32-S3.
+This document defines the normative module contracts for the ESP32-S3 MQTT broker.
 
-Його роль:
-- перетворити архітектурні принципи в конкретні модульні межі
-- зменшити ризик architectural drift під час старту реалізації
-- зафіксувати inputs/outputs, ownership, errors, threading і testability expectations
+Its role is to:
+- turn architectural principles into concrete module boundaries
+- reduce the risk of architectural drift during implementation startup
+- define inputs/outputs, ownership, errors, threading, and testability expectations
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/architecture/ARCHITECTURE.md`
 - `docs/architecture/TECH_STACK.md`
 - `docs/architecture/CODING_GUIDELINES.md`
@@ -21,72 +21,72 @@
 
 ---
 
-## 2. Загальні правила контрактів
+## 2. General contract rules
 
 ### 2.1. Dependency rule
 
 Core modules:
-- не залежать від ESP-IDF
-- не тягнуть socket/task/storage handles
-- взаємодіють лише через domain types і ports
+- do not depend on ESP-IDF
+- do not pull in socket/task/storage handles
+- interact only through domain types and ports
 
 Adapters:
-- залежать від ports
-- можуть залежати від platform APIs
-- не приймають архітектурних policy-рішень замість core
+- depend on ports
+- may depend on platform APIs
+- must not make architectural policy decisions instead of core
 
 Application/runtime:
-- збирає модулі
-- конфігурує adapters і policies
-- не дублює бізнес-логіку core
+- assembles modules
+- configures adapters and policies
+- does not duplicate core business logic
 
 ### 2.2. Error contract
 
-Для міжмодульних API:
-- повертати structured status/result, а не `bool` без контексту
-- помилки policy/validation мають бути явними
-- unexpected failure не повинен маскуватися silent fallback-ом
+For inter-module APIs:
+- return structured status/results, not `bool` without context
+- policy/validation errors must be explicit
+- unexpected failures must not be masked by silent fallbacks
 
 ### 2.3. Ownership contract
 
-Кожен модуль повинен явно визначати:
-- хто володіє вхідними буферами
-- чи дозволено borrow/view semantics
-- коли потрібне copy/retain
-- коли ownership transfer заборонений
+Every module must explicitly define:
+- who owns input buffers
+- whether borrow/view semantics are allowed
+- when copy/retain is required
+- when ownership transfer is forbidden
 
 ### 2.4. Threading contract
 
-За замовчуванням core contracts:
+By default, core contracts are:
 - deterministic
 - thread-agnostic
-- придатні до host-side tests
+- suitable for host-side tests
 
-Якщо модуль не є thread-safe:
-- це повинно бути явно задокументовано
-- synchronization не повинен “протікати” через API
+If a module is not thread-safe:
+- that must be documented explicitly
+- synchronization must not leak through the API
 
 ### 2.5. Read-model contract
 
 App-facing APIs:
-- повинні повертати snapshots, DTOs або bounded query results
-- не повинні розкривати mutable live internals
-- повинні будуватися через dedicated facade/builder/coordinator seams where needed
+- must return snapshots, DTOs, or bounded query results
+- must not expose mutable live internals
+- must be built through dedicated facade/builder/coordinator seams where needed
 
 ### 2.6. Async operation contract
 
-Якщо API запускає non-immediate operation:
-- повинен існувати `request_id` або equivalent operation identity
-- completion/error має бути observable через explicit result contract
-- timeout/failure state не повинен залишатися implicit
+If an API starts a non-immediate operation:
+- there must be a `request_id` or equivalent operation identity
+- completion/error must be observable through an explicit result contract
+- timeout/failure state must not remain implicit
 
 ---
 
-## 3. Базові domain types
+## 3. Base domain types
 
 ### 3.1. `Message`
 
-Містить щонайменше:
+Contains at least:
 - `topic`
 - `payload_ref`
 - `qos`
@@ -95,17 +95,17 @@ App-facing APIs:
 - `origin`
 - `scope`
 - `route_flags`
-- `message_id` або dedup id
-- `protocol_meta_ref` як optional reference
+- `message_id` or dedup ID
+- `protocol_meta_ref` as an optional reference
 
-Контракт:
-- це domain object, не MQTT packet
-- payload бажано передавати як bounded reference/view
-- `origin` і `scope` є обов’язковими для routing/federation correctness
+Contract:
+- this is a domain object, not an MQTT packet
+- payload should preferably be passed as a bounded reference/view
+- `origin` and `scope` are mandatory for routing/federation correctness
 
 ### 3.2. `Subscription`
 
-Містить:
+Contains:
 - `filter`
 - `qos`
 - `owner_type`
@@ -113,20 +113,20 @@ App-facing APIs:
 - `scope`
 - `flags`
 
-Контракт:
-- ownership має бути abstract, не socket-based
-- local/remote/internal owners підтримуються відразу
+Contract:
+- ownership must be abstract, not socket-based
+- local/remote/internal owners are supported from day one
 
 ### 3.3. `DeliveryTarget`
 
-Абстракція delivery destination:
+An abstract delivery destination:
 - local client
 - remote broker
 - internal system target
 
-Контракт:
-- routing працює з `DeliveryTarget`
-- transport details не входять у target contract
+Contract:
+- routing operates on `DeliveryTarget`
+- transport details are not part of the target contract
 
 ---
 
@@ -135,8 +135,8 @@ App-facing APIs:
 ### 4.1. `broker_core`
 
 Responsibility:
-- orchestration between protocol/session/retained/qos/routing/acl/federation
-- lifecycle of broker node
+- orchestrates protocol/session/retained/QoS/routing/ACL/federation
+- lifecycle of the broker node
 - publication of domain events
 
 Inputs:
@@ -147,11 +147,11 @@ Outputs:
 - route/delivery actions
 - persistence/session actions
 - emitted domain events
-- status/results for caller
+- status/results for the caller
 
 Ownership:
-- не володіє transport/platform handles
-- може володіти composition root references to module instances
+- does not own transport/platform handles
+- may own composition-root references to module instances
 
 Errors:
 - orchestration conflicts
@@ -163,7 +163,7 @@ Threading:
 - async orchestration outside the contract
 
 Testability:
-- повинен запускатися на host без ESP-IDF runtime
+- must run on a host without ESP-IDF runtime
 
 Allowed dependencies:
 - domain types
@@ -172,7 +172,7 @@ Allowed dependencies:
 
 Runtime/application note:
 - app-facing access to broker state must go through runtime facade/read-model seams
-- async admin/runtime operations must not be hidden inside broker_core without explicit request/result contract
+- async admin/runtime operations must not be hidden inside `broker_core` without an explicit request/result contract
 
 ### 4.2. `protocol_mqtt`
 
@@ -192,8 +192,8 @@ Outputs:
 - serialized outbound packets
 
 Ownership:
-- parser не повинен без потреби копіювати payload
-- serialized buffers повинні бути bounded and explicit
+- the parser must not copy payload unnecessarily
+- serialized buffers must be bounded and explicit
 
 Errors:
 - malformed packet
@@ -206,11 +206,11 @@ Threading:
 - deterministic parse/serialize behavior required
 
 Testability:
-- host-side unit/property tests mandatory
+- host-side unit/property tests are mandatory
 
 Allowed dependencies:
 - domain-neutral packet structures
-- ports only if strictly needed for clocks/limits abstraction
+- ports only if strictly needed for clock/limit abstraction
 
 ### 4.3. `routing`
 
@@ -228,7 +228,7 @@ Inputs:
 
 Outputs:
 - `RoutePlan`
-- `DeliveryTarget` list or equivalent bounded plan
+- `DeliveryTarget` list or an equivalent bounded plan
 - emitted route-related events
 
 Ownership:
@@ -244,7 +244,7 @@ Threading:
 - deterministic and side-effect minimal
 
 Testability:
-- must run with fake `ISubscriptionIndex`, `IRouterPolicy`, `IAclPolicy`
+- must run with fake `ISubscriptionIndex`, `IRouterPolicy`, and `IAclPolicy`
 
 Allowed dependencies:
 - domain types
@@ -266,7 +266,7 @@ Inputs:
 - policy config
 
 Outputs:
-- allow/deny result with explicit reason
+- allow/deny result with an explicit reason
 
 Ownership:
 - does not own session transport state
@@ -280,7 +280,7 @@ Threading:
 - deterministic, pure-function style preferred
 
 Testability:
-- unit tests for allow/deny/default-deny/scoped rules mandatory
+- unit tests for allow/deny/default-deny/scoped rules are mandatory
 
 Allowed dependencies:
 - domain types
@@ -302,11 +302,11 @@ Inputs:
 Outputs:
 - session state updates
 - restore result
-- events for session lifecycle
+- session lifecycle events
 
 Ownership:
 - owns session control state
-- does not own persistent storage backend
+- does not own the persistent storage backend
 
 Errors:
 - invalid resume
@@ -314,10 +314,10 @@ Errors:
 - resource limit exceeded
 
 Threading:
-- external synchronization hidden behind module boundary
+- external synchronization is hidden behind the module boundary
 
 Testability:
-- fake `ISessionStore` sufficient for host-side tests
+- a fake `ISessionStore` is sufficient for host-side tests
 
 Allowed dependencies:
 - domain types
@@ -342,7 +342,7 @@ Outputs:
 
 Ownership:
 - owns retained metadata handling
-- payload storage ownership delegated through `IRetainedStore`
+- payload storage ownership is delegated through `IRetainedStore`
 
 Errors:
 - storage failure
@@ -353,7 +353,7 @@ Threading:
 - deterministic logic separate from storage synchronization
 
 Testability:
-- fake `IRetainedStore` mandatory
+- fake `IRetainedStore` is mandatory
 
 Allowed dependencies:
 - domain types
@@ -386,10 +386,10 @@ Errors:
 - limit exceeded
 
 Threading:
-- time-dependent but deterministic with fake clock
+- time-dependent but deterministic with a fake clock
 
 Testability:
-- no real sleep; fake `IClock` required
+- no real sleep; fake `IClock` is required
 
 Allowed dependencies:
 - domain types
@@ -416,7 +416,7 @@ Outputs:
 
 Ownership:
 - does not own transport implementation
-- operates on abstract broker link contract
+- operates on an abstract broker-link contract
 
 Errors:
 - policy conflict
@@ -427,7 +427,7 @@ Threading:
 - deterministic policy layer preferred
 
 Testability:
-- fake `IFederationLink` and fake nodes/simulator required
+- fake `IFederationLink` and fake nodes/simulation are required
 
 Allowed dependencies:
 - domain types
@@ -437,8 +437,8 @@ Allowed dependencies:
 ### 4.9. `runtime_facade`
 
 Responsibility:
-- expose app-facing runtime API
-- return snapshots, DTOs and bounded query results
+- expose the app-facing runtime API
+- return snapshots, DTOs, and bounded query results
 - isolate admin/inspection consumers from concrete runtime internals
 
 Inputs:
@@ -452,7 +452,7 @@ Outputs:
 
 Ownership:
 - does not transfer ownership of live mutable runtime state
-- may return copies or immutable views as documented by contract
+- may return copies or immutable views as documented by the contract
 
 Errors:
 - snapshot unavailable
@@ -460,7 +460,7 @@ Errors:
 - invalid app-facing request
 
 Threading:
-- may be called from application/runtime layer
+- may be called from the application/runtime layer
 - must not require caller-owned locks
 
 Testability:
@@ -488,7 +488,7 @@ Outputs:
 
 Ownership:
 - does not own authoritative domain state
-- owns only read-model caches/storage allowed by memory policy
+- owns only read-model caches/storage allowed by the memory policy
 
 Errors:
 - snapshot rebuild failure
@@ -496,7 +496,7 @@ Errors:
 
 Threading:
 - must preserve deterministic publication behavior
-- should not expose mutable cache internals to consumers
+- must not expose mutable cache internals to consumers
 
 Testability:
 - host-side tests must verify rebuild triggers and snapshot stability
@@ -510,8 +510,8 @@ Allowed dependencies:
 
 Responsibility:
 - generate `request_id` for async operations
-- track queued/in-progress/completed/failed/timed_out operations
-- expose bounded poll/query contract for operation results
+- track queued/in-progress/completed/failed/timed-out operations
+- expose a bounded poll/query contract for operation results
 
 Inputs:
 - operation submission metadata
@@ -524,19 +524,19 @@ Outputs:
 - terminal result/error payloads where applicable
 
 Ownership:
-- owns bounded transient operation tracking state
+- owns bounded transient operation-tracking state
 - must not absorb long-lived domain state
 
 Errors:
 - queue/store full
-- unknown request id
+- unknown request ID
 - timeout or failed operation terminal status
 
 Threading:
 - must preserve explicit terminal states and deterministic query semantics
 
 Testability:
-- host-side tests must verify request id generation, timeout handling and cleanup
+- host-side tests must verify request ID generation, timeout handling, and cleanup
 
 Allowed dependencies:
 - domain-safe result/status DTOs
@@ -554,7 +554,7 @@ Responsibility:
 Contract:
 - no socket descriptor leakage
 - bounded send/receive semantics
-- explicit connection state reporting
+- explicit connection-state reporting
 
 ### 5.2. `ITransportListener`
 
@@ -563,7 +563,7 @@ Responsibility:
 
 Contract:
 - returns abstract endpoints
-- platform accept loop must stay outside core
+- the platform accept loop must stay outside core
 
 ### 5.3. `ISessionStore`
 
@@ -571,53 +571,51 @@ Responsibility:
 - persist/load session snapshots and related session metadata
 
 Contract:
-- versioned snapshot support expected
-- partial/corrupted restore must be representable
+- versioned snapshot support is expected
+- platform storage details must stay outside core
 
 ### 5.4. `IRetainedStore`
 
 Responsibility:
-- retained payload and retained metadata persistence
+- persist/load retained payloads and metadata
 
 Contract:
-- supports scoped retained semantics
-- storage backend remains replaceable
+- retained storage must be bounded and observable for tests
 
 ### 5.5. `ISubscriptionIndex`
 
 Responsibility:
 - add/remove/query subscriptions
-- wildcard and owner-aware lookup
+- provide matching views for routing
 
 Contract:
-- deterministic lookup semantics
-- local/remote/internal owners supported
+- does not expose transport/session platform details
+- supports local and remote owners
 
 ### 5.6. `IAclPolicy`
 
 Responsibility:
-- evaluate publish/subscribe authorization
+- abstract authorization policy evaluation
 
 Contract:
-- default deny on evaluation failure
-- explicit reason/status preferred
+- default deny must be representable
+- failure-to-evaluate must be visible to the caller
 
 ### 5.7. `IRouterPolicy`
 
 Responsibility:
-- decide forwarding eligibility and routing scope policy
+- abstract route-policy decisions
 
 Contract:
-- mechanism-free policy only
-- local-only vs remote-export behavior explicit
+- local-only/export/import/scoping decisions remain externalized from routing mechanism
 
 ### 5.8. `IClock`
 
 Responsibility:
-- time source for retries, expiry and tests
+- abstract time source / timeout trigger source
 
 Contract:
-- fake/injectable implementation mandatory
+- fake/injectable implementation is mandatory
 
 ### 5.9. `ILogger`
 
@@ -626,7 +624,7 @@ Responsibility:
 
 Contract:
 - no hidden formatting assumptions in core
-- fields like module/event/result/reason should be representable
+- fields such as module/event/result/reason must be representable
 
 ### 5.10. `IMetrics`
 
@@ -634,7 +632,7 @@ Responsibility:
 - counter/gauge/telemetry sink
 
 Contract:
-- metrics calls must not force core to know backend details
+- metric calls must not force core to know backend details
 
 ### 5.11. `IFederationLink`
 
@@ -649,7 +647,7 @@ Contract:
 
 ## 6. Event contract
 
-Базові доменні події:
+Base domain events:
 - `ClientConnected`
 - `ClientDisconnected`
 - `PublishReceived`
@@ -661,21 +659,21 @@ Contract:
 - `ForwardRequested`
 - `RemotePublishReceived`
 
-Контракт:
-- payload/meta кожної події повинні бути testable
-- події не повинні залежати від platform handles
-- event emission має бути deterministic у host-side tests
-- reject/error paths не повинні емінити зайві success-like events
+Contract:
+- payload/meta of every event must be testable
+- events must not depend on platform handles
+- event emission must be deterministic in host-side tests
+- reject/error paths must not emit extra success-like events
 
 ---
 
 ## 7. Configuration contract
 
 `config_loader` contract:
-- читає versioned config schema
-- виконує deterministic migrations до current schema
-- повертає normalized config model
-- fail-fast відхиляє incompatible schema/version
+- reads a versioned config schema
+- performs deterministic migrations to the current schema
+- returns a normalized config model
+- fails fast on incompatible schema/version
 
 Configuration must define:
 - protocol limits
@@ -690,11 +688,11 @@ Configuration must define:
 
 ## 8. Implementation note
 
-Якщо майбутній кодовий модуль не може коротко відповісти на питання:
-- що він приймає
-- що повертає
-- чим володіє
-- від кого залежить
-- як тестується
+If a future code module cannot briefly answer the following questions:
+- what does it accept
+- what does it return
+- what does it own
+- what does it depend on
+- how is it tested
 
-то його контракт ще не достатньо сформований для чистої реалізації.
+then its contract is not yet clear enough for a clean implementation.

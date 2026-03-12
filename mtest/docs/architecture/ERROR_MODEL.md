@@ -1,413 +1,276 @@
 # ERROR_MODEL.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ фіксує єдину модель помилок для MQTT-брокера на ESP32-S3.
+This document defines the canonical error model for the MQTT broker.
 
-Його цілі:
-- уніфікувати error handling між core, ports, adapters і runtime
-- відокремити recoverable та unrecoverable failures
-- зробити помилки придатними для logs, metrics, tests і policy decisions
+Its goals are to:
+- provide one consistent approach to errors across modules
+- prevent ad-hoc `bool`-style failures and silent fallbacks
+- make errors testable, loggable, and suitable for metrics/telemetry
 
-Документ узгоджується з:
-- `docs/architecture/CODING_GUIDELINES.md`
-- `docs/architecture/TECH_STACK.md`
+This document aligns with:
 - `docs/architecture/MODULE_CONTRACTS.md`
+- `docs/architecture/CODING_GUIDELINES.md`
+- `docs/architecture/CONFIG_SCHEMA.md`
 - `docs/testing/TEST_STRATEGY.md`
 
 ---
 
-## 2. Основні принципи
+## 2. Core principles
 
-- ніяких silent failures
-- `bool` без контексту не використовується для значущих API
-- errors повертаються як structured `Status` або `Result<T, E>`
-- policy failures повинні бути явними
-- adapters не повинні губити platform errors при трансляції в domain-level model
-
----
-
-## 3. Канонічні типи результату
-
-### 3.1. `Status`
-
-Використовувати для:
-- operations without return payload
-- validation
-- command execution
-
-Містить щонайменше:
-- `code`
-- `severity`
-- `module`
-- `reason`
-- `retryable`
-
-### 3.2. `Result<T, E>` або `Expected<T, E>`
-
-Використовувати для:
-- parse results
-- lookups
-- load/restore operations
-- route/plan generation
-
-Містить:
-- successful payload `T`
-- structured error `E`
-
-### 3.3. `ResultCode`
-
-Повинен бути bounded enum, а не stringly-typed error set.
+- errors must be explicit
+- error contracts must be stable
+- policy failures must not be confused with transport/storage failures
+- unexpected failures must not be silently downgraded to success-like results
+- startup failures and runtime failures must be distinguishable
 
 ---
 
-## 4. Error classes
+## 3. Canonical model
 
-### 4.1. `ValidationError`
+Use the following canonical concepts:
+- `ResultCode`
+- `Status`
+- `Result<T, E>` or equivalent `Expected<T, E>`-style wrapper
 
-Приклади:
-- invalid config field
-- invalid topic/filter
-- malformed MQTT packet
-- unsupported property combination
+General rule:
+- operations that can fail for meaningful reasons must not return plain `bool`
 
-Зазвичай:
-- recoverable for system
-- reject current request/config/input
+---
 
-### 4.2. `PolicyError`
+## 4. Severity model
 
-Приклади:
+Every error should be classifiable by severity:
+- `info` or non-failure observation where needed
+- `warning`
+- `error`
+- `critical`
+
+Severity does not replace the result code. It complements it.
+
+---
+
+## 5. Retryability model
+
+Every relevant runtime error should be classifiable as:
+- retryable
+- non-retryable
+- unknown/not-applicable
+
+This is especially important for:
+- transport failures
+- persistence failures
+- federation link failures
+- async operation failures
+
+---
+
+## 6. Failure classes
+
+### 6.1. `ValidationError`
+
+Used for:
+- invalid config
+- malformed input at the contract boundary
+- unsupported field combinations
+- out-of-range values
+
+### 6.2. `PolicyError`
+
+Used for:
 - ACL deny
 - route policy deny
-- federation policy deny
+- namespace policy violation
+- federation export/import deny
 
-Зазвичай:
-- fail-closed
-- not a crash condition
-- should be visible in metrics/logging
+### 6.3. `ResourceLimitError`
 
-### 4.3. `ResourceLimitError`
+Used for:
+- queue limit reached
+- payload too large
+- retained/session budget exceeded
+- operation result store full
 
-Приклади:
-- queue full
-- retained limit reached
-- inflight limit reached
-- memory budget exceeded
+### 6.4. `StorageError`
 
-Зазвичай:
-- recoverable
-- explicit reject/degrade
-- should increment limit-reject metrics
+Used for:
+- persistence write failure
+- persistence read failure
+- corrupted state detection
+- snapshot validation failure
 
-### 4.4. `StorageError`
+### 6.5. `TransportError`
 
-Приклади:
-- failed write
-- corrupted snapshot
-- partial restore
-- unsupported persistence version
+Used for:
+- endpoint closed
+- send/receive failure
+- reconnect failure
+- broker-link transport failure
 
-Зазвичай:
-- may be recoverable or degraded
-- never silently ignored
+### 6.6. `StateError`
 
-### 4.5. `TransportError`
+Used for:
+- invalid state transition
+- inconsistent QoS/session state
+- broken invariants that make runtime behavior invalid
 
-Приклади:
-- send failure
-- receive failure
-- connection closed
-- timeout
+### 6.7. `DependencyError`
 
-Зазвичай:
-- adapter-level recoverable
-- mapped to reconnect/cleanup behavior, not hidden retry loops
-
-### 4.6. `StateError`
-
-Приклади:
-- invalid session resume
-- unexpected ack
-- duplicate/inconsistent inflight transition
-- impossible internal state
-
-Зазвичай:
-- higher severity than validation/policy errors
-- may indicate bug or corrupted state
-
-### 4.7. `DependencyError`
-
-Приклади:
-- clock unavailable
-- metrics backend failed
-- logger backend unavailable
-- required port implementation missing
-
-Зазвичай:
-- startup fail-fast або controlled degradation, залежно від component criticality
+Used for:
+- failure of an injected port/service
+- unavailable required dependency
+- a missing required runtime seam at startup
 
 ---
 
-## 5. Severity levels
+## 7. Startup error policy
 
-### 5.1. `Debug`
+Startup errors must be handled strictly.
 
-Для:
-- expected rejects in negative tests
-- noisy internal non-critical signals
-
-### 5.2. `Info`
-
-Для:
-- expected protocol/policy outcomes
-- normal connection closure
-
-### 5.3. `Warning`
-
-Для:
-- recoverable resource pressure
-- config fallback to documented default
-- transient storage/transport issues
-
-### 5.4. `Error`
-
-Для:
-- failed operation
-- invalid persistent state
-- repeated transport/storage failures
-- impossible request acceptance
-
-### 5.5. `Critical`
-
-Для:
-- startup-blocking config/schema errors
-- unrecoverable state corruption
+Fail fast at startup for:
+- invalid normalized config
+- incompatible config schema version
 - broken invariants that invalidate runtime correctness
+- missing required runtime wiring
+
+Do not continue startup in a partially valid state when correctness depends on the missing piece.
 
 ---
 
-## 6. Retryability rules
+## 8. Runtime error policy
 
-### Retryable by default
+Runtime error handling should distinguish between:
+- fail closed
+- controlled degradation
+- retryable transient failure
+- terminal operation failure
 
-- transient transport failures
-- queue pressure after backoff
-- temporary storage busy conditions
+### 8.1. Fail closed
 
-### Not retryable by default
+Use for:
+- ACL/policy evaluation failure
+- unknown authorization state
+- impossible namespace/routing decisions where unsafe forwarding could occur
 
-- config validation errors
-- schema version mismatch
-- ACL/policy deny
-- malformed packet
-- unsupported feature/protocol combination
+### 8.2. Controlled degradation
 
-### Important rule
+Use for:
+- optional diagnostics backend failure
+- non-critical metrics emission failure
+- limited federation-link degradation when local broker correctness remains intact
 
-Retryability must be explicit in `Status`/error object.
-Callers must not guess based on message text.
+### 8.3. Retryable transient failure
 
----
+Use for:
+- reconnect attempts
+- temporary transport failures
+- bounded retry scheduling where the retry model is explicit and testable
 
-## 7. Fail-fast vs fail-closed vs degrade
+### 8.4. Terminal operation failure
 
-### 7.1. Fail-fast
-
-Застосовується для:
-- incompatible config schema
-- missing required config
-- unsupported platform/runtime prerequisites
-- invariant-breaking startup state
-
-### 7.2. Fail-closed
-
-Застосовується для:
-- ACL evaluation failure
-- route/federation policy evaluation failure
-- uncertain authorization state
-
-### 7.3. Controlled degradation
-
-Застосовується для:
-- metrics backend unavailable
-- tracing unavailable
-- temporary persistence unavailability
-- transport reconnect paths
+Use for:
+- async operations that fail definitively
+- invalid operation requests
+- persistent resource-limit exhaustion without an allowed retry path
 
 ---
 
-## 8. Error code taxonomy
+## 9. Logging and metrics policy for errors
 
-Приклад рекомендованих груп кодів:
+Every important error path should define:
+- whether it must be logged
+- whether it must increment a metric/counter
+- whether it must emit a trace/event for diagnostics
 
-- `OK`
-- `ERR_INVALID_ARGUMENT`
-- `ERR_INVALID_STATE`
-- `ERR_POLICY_DENIED`
-- `ERR_LIMIT_REACHED`
-- `ERR_QUEUE_FULL`
-- `ERR_STORAGE_IO`
-- `ERR_STORAGE_CORRUPT`
-- `ERR_TRANSPORT_IO`
+At minimum, the following should be observable:
+- startup failures
+- policy denials where operationally relevant
+- storage failures
+- reconnect/retry failures
+- queue/memory limit hits
+- async operation terminal failures
+
+---
+
+## 10. Adapter translation rules
+
+Adapters may translate platform/library errors into the canonical error model, but they must not:
+- leak raw platform error types into core contracts
+- collapse all failures into one vague generic error
+- pretend success on partial failure
+
+Examples:
+- socket/NVS/lwIP errors become `TransportError` or `StorageError`
+- adapter-level parse/validation issues become `ValidationError` where appropriate
+
+---
+
+## 11. Config-loader error policy
+
+`config_loader` must distinguish at least:
+- parse failure
+- migration failure
+- unsupported version
+- cross-field validation failure
+- profile/budget violation
+
+These must be testable independently.
+
+---
+
+## 12. Stable error taxonomy
+
+The error taxonomy must remain stable enough for:
+- tests
+- logs
+- metrics
+- CI expectations
+- future admin/runtime inspection APIs
+
+That means a result code must not be changed casually if it affects observability or test contracts.
+
+---
+
+## 13. Result-code design guidance
+
+Result codes should be:
+- explicit
+- domain-meaningful
+- stable
+- non-overlapping where practical
+
+Bad examples:
+- one `ERR_FAILED` for everything
+- mixing policy denial and transport failure in the same code
+
+Good examples:
+- `ERR_ACL_DENY`
+- `ERR_ROUTE_POLICY_DENY`
+- `ERR_QUEUE_LIMIT`
+- `ERR_STORAGE_WRITE`
 - `ERR_TIMEOUT`
 - `ERR_UNSUPPORTED_FEATURE`
-- `ERR_SCHEMA_VERSION`
-- `ERR_DEPENDENCY_UNAVAILABLE`
-- `ERR_INTERNAL_BUG`
-
-Правила:
-- коди мають бути stable
-- коди мають бути придатні для metrics dimensioning
-- human-readable text не повинен бути єдиним carrier of meaning
 
 ---
 
-## 9. Module-specific expectations
+## 14. Test expectations
 
-### 9.1. `protocol_mqtt`
-
-Повинен повертати:
-- parse/validation/protocol feature errors
-
-Не повинен:
-- маскувати malformed packet як empty success
-
-### 9.2. `routing`
-
-Повинен розрізняти:
-- no matching route
-- policy deny
-- invalid scope/namespace
-- inconsistent subscription index
-
-### 9.3. `acl`
-
-Повинен розрізняти:
-- explicit deny
-- evaluation failure
-
-Failure path:
-- always fail-closed
-
-### 9.4. `session`
-
-Повинен розрізняти:
-- new session created
-- resumed successfully
-- resume rejected
-- persisted state invalid
-
-### 9.5. `retained`
-
-Повинен розрізняти:
-- retained updated
-- retained deleted
-- retained rejected by limits
-- retained storage failure
-
-### 9.6. `qos`
-
-Повинен розрізняти:
-- ack accepted
-- duplicate ack
-- timeout-triggered retry
-- inflight state invalid
-
-### 9.7. `federation`
-
-Повинен розрізняти:
-- forward allowed
-- forward denied by policy
-- drop by anti-loop
-- link unavailable
-- dedup conflict
-
----
-
-## 10. Logging contract
-
-Кожна значуща помилка повинна бути loggable з полями:
-- `module`
-- `code`
-- `severity`
-- `entity_id` або equivalent
-- `result`
-- `reason`
-- `retryable`
-
-Rules:
-- policy deny не логувати як crash-like failure
-- repeated transient failures should be rate-aware
-- payload bodies не логувати за замовчуванням
-
----
-
-## 11. Metrics contract
-
-Для error paths повинні бути можливі counters/gauges:
-- rejects by code
-- ACL deny count
-- route policy deny count
-- queue full count
-- storage failure count
-- transport failure count
-- schema/config validation failure count
-- retry count
-- degraded mode count
-
-Metrics labels/dimensions must prefer stable error codes, not free-form text.
-
----
-
-## 12. Test contract
-
-Тести повинні покривати:
-- exact error code for critical failures
-- retryable vs non-retryable classification
-- fail-fast startup errors
+The error model is incomplete unless tests exist for:
 - fail-closed policy behavior
-- degradation behavior where configured
-- mapping of platform errors into structured domain-level errors
-
-Bugfix rule:
-- кожен виправлений error path повинен отримати regression test
-
----
-
-## 13. Adapter translation rules
-
-Adapters повинні:
-- переводити platform/native errors у bounded domain-level codes
-- не протягувати errno/socket/NVS internals у core APIs
-- зберігати enough context for logs and metrics
-
-Не допускається:
-- adapter returns opaque `false`
-- adapter throws away retryability information
-- adapter converts every failure into one generic error
+- startup fail-fast behavior
+- explicit distinction of validation vs storage vs transport failures
+- timeout vs terminal failure behavior for async operations
+- stable result-code visibility in logs/metrics where required
 
 ---
 
-## 14. Startup error policy
+## 15. Definition of Done for the error model
 
-Startup must fail immediately for:
-- invalid or incompatible config
-- unsupported schema version
-- required component missing
-- invalid memory budget configuration
-
-Startup may continue in degraded mode for:
-- optional diagnostics backend unavailable
-- optional trace/event log backend unavailable
-
----
-
-## 15. Definition of Done
-
-Error model вважається прийнятим, якщо:
-- кожен значущий API використовує structured result model
-- recoverable vs unrecoverable paths відрізняються явно
-- policy failures fail-closed
-- startup validation failures fail-fast
-- logs/metrics/tests можуть опиратися на stable error codes
+The error model is considered established if:
+- plain `bool` is not the default failure contract for meaningful operations
+- failure classes are explicit
+- startup/runtime error policies are distinct
+- retryability/terminal-state semantics are documented
+- adapter translation rules are explicit
+- tests can assert meaningful failure categories and result codes

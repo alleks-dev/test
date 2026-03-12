@@ -1,31 +1,31 @@
 # TECH_STACK.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ фіксує рекомендований технічний стек для MQTT-брокера на ESP32-S3, який має еволюціонувати:
+This document defines the recommended technical stack for the ESP32-S3 MQTT broker, which is expected to evolve:
 
-- від `Single broker`
-- до `Primary/Standby`
-- і далі до `Federated multi-broker`
+- from `single-broker mode`
+- to `Primary/Standby`
+- and later to `federated multi-broker mode`
 
-Ключові вимоги до стеку:
+Core stack requirements:
 
-- контрольований runtime footprint
-- чиста модульна архітектура
-- висока тестованість
-- придатність до довгого розвитку
-- передбачуване використання SRAM/PSRAM
-- хороша інтеграція з ESP32-S3 та ESP-IDF
+- controlled runtime footprint
+- clean modular architecture
+- high testability
+- suitability for long-term evolution
+- predictable SRAM/PSRAM usage
+- strong integration with ESP32-S3 and ESP-IDF
 
 ---
 
-## 2. Рекомендований базовий стек
+## 2. Recommended baseline stack
 
-### Основний вибір
+### Primary choice
 
 - **ESP-IDF 5.x**
-- **C++20** для більшості власних компонентів
-- **C** або thin C-style wrappers для окремих low-level adapter-ів
+- **C++20** for most custom components
+- **C** or thin C-style wrappers for selected low-level adapters
 - **CMake**
 - **ESP-IDF components-based structure**
 - **host-side tests + ESP-IDF integration tests + hardware tests**
@@ -33,96 +33,96 @@
 
 ---
 
-## 3. Головний принцип стеку
+## 3. Core stack principle
 
-Проєкт будується не як “монолітний firmware-файл”, а як:
+The project is not built as a monolithic firmware file, but as:
 
 > **modular components + clean core + ports/adapters + bounded runtime policies**
 
-Тобто:
-- core логіка не залежить напряму від ESP-IDF
-- ESP-IDF використовується через adapters
-- build має підтримувати окреме тестування core і platform-рівня
-- дозволена лише контрольована підмножина C++/STL
-- protocol model має допускати MQTT 5 extension points без повного feature commitment у MVP
+This means:
+- core logic does not depend directly on ESP-IDF
+- ESP-IDF is used through adapters
+- the build must support separate testing of core and platform levels
+- only a controlled subset of C++/STL is allowed
+- the protocol model must support MQTT 5 extension points without full feature commitment in the MVP
 
 ---
 
-## 4. Вибір мови
+## 4. Language choice
 
-## 4.1. Основна мова
+## 4.1. Primary language
 
-**C++20** — рекомендована основна мова проєкту.
+**C++20** is the recommended primary language for the project.
 
-### Чому саме C++20
+### Why C++20
 
-- зручно виражати domain model
-- добре підходить для ports/adapters architecture
-- дає безпечніші й читабельніші абстракції, ніж C
-- спрощує unit testing core-логіки
-- добре підходить для routing, state machines, policy modules
-- дозволяє писати modern embedded code без важкого runtime
+- it expresses the domain model well
+- it fits ports/adapters architecture well
+- it provides safer and clearer abstractions than C
+- it simplifies unit testing of core logic
+- it fits routing, state machines, and policy modules well
+- it allows modern embedded code without a heavy runtime
 
-### Чому не “повний сучасний C++ без обмежень”
+### Why not unrestricted modern C++
 
-Тому що firmware для ESP32-S3 потребує:
-- строгого контролю пам’яті
-- контрольованого binary size
-- передбачуваних latency
-- мінімуму прихованих алокацій
-- мінімуму runtime-магії
+Because ESP32-S3 firmware requires:
+- strict memory control
+- controlled binary size
+- predictable latency
+- minimal hidden allocations
+- minimal runtime magic
 
-Отже використовується **embedded-safe subset of C++20**.
+Therefore the project uses an **embedded-safe subset of C++20**.
 
 ---
 
-## 4.2. Де допустимий C
+## 4.2. Where C is allowed
 
-C допустимий для:
-- thin wrappers над ESP-IDF C API
+C is acceptable for:
+- thin wrappers over ESP-IDF C APIs
 - low-level transport glue
 - storage glue
 - ISR-adjacent helper code
 - platform binding layers
 
-Тобто:
-- **архітектура і доменна логіка — C++**
-- **low-level edge code — за потреби C або C-shaped C++**
+That means:
+- **architecture and domain logic use C++**
+- **low-level edge code may use C or C-shaped C++ when appropriate**
 
 ## 4.3. MQTT protocol policy
 
-Рекомендація:
-- будувати broker як `MQTT 5-ready`
-- не намагатися реалізувати весь MQTT 5 у першому production milestone
+Recommendation:
+- build the broker as `MQTT 5-ready`
+- do not try to implement all of MQTT 5 in the first production milestone
 
-Це означає:
-- packet parser/serializer повинен допускати extensible property model
-- reason-code oriented protocol responses бажано закласти відразу
-- optional MQTT 5 features вводяться поетапно, коли є тестове й ресурсне обґрунтування
-- MQTT 3.1.1-compatible stable path залишається пріоритетом для ранніх етапів
-
----
-
-## 5. Політика по стандарту мови
-
-### Рекомендовано
-
-- **C++20** для власних компонентів
-
-### Допустимо
-
-- **C++17** для окремих conservative-компонентів, якщо це виправдано
-
-### Не рекомендується як основний режим
-
-- “пливти” на дефолтному стандарті компілятора без фіксації в build policy
-- змішувати різні правила стилю між компонентами без явного документування
+This means:
+- the packet parser/serializer must support an extensible property model
+- reason-code-oriented protocol responses should be designed in from the beginning
+- optional MQTT 5 features are introduced incrementally when there is test and resource justification
+- a stable MQTT 3.1.1-compatible path remains the priority in early stages
 
 ---
 
-## 6. Дозволена підмножина C++
+## 5. Language-standard policy
 
-## 6.1. Дозволені мовні фічі
+### Recommended
+
+- **C++20** for custom components
+
+### Acceptable
+
+- **C++17** for conservative components when justified
+
+### Not recommended as the primary mode
+
+- relying on the compiler default standard without explicit build policy
+- mixing different style rules across components without explicit documentation
+
+---
+
+## 6. Allowed C++ subset
+
+## 6.1. Allowed language features
 
 - `enum class`
 - `constexpr`
@@ -132,30 +132,30 @@ C допустимий для:
 - move semantics
 - `using` aliases
 - strongly typed `struct` / `class`
-- RAII для малих контрольованих ресурсів
+- RAII for small controlled resources
 - `final` / `override`
 - `[[nodiscard]]`
 - `std::byte`
 
 ---
 
-## 6.2. Дозволені utility-типи
+## 6.2. Allowed utility types
 
 - `std::array`
 - `std::span`
 - `std::string_view`
 - `std::optional`
 - `std::variant`
-- `std::tuple` — помірно
-- `std::pair` — помірно
+- `std::tuple` - used sparingly
+- `std::pair` - used sparingly
 - `std::bitset`
-- `std::unique_ptr` — не в hot-path і лише з чіткою ownership-політикою
+- `std::unique_ptr` - not in hot paths and only with explicit ownership policy
 
 ---
 
-## 6.3. Дозволені STL-контейнери з обмеженнями
+## 6.3. Allowed STL containers with restrictions
 
-### Дозволені лише поза hot-path
+### Allowed only outside hot paths
 
 - `std::vector`
 - `std::string`
@@ -163,7 +163,7 @@ C допустимий для:
 - `std::unordered_map`
 - `std::deque`
 
-### Де можна їх використовувати
+### Where they may be used
 
 - config parsing
 - management/API layer
@@ -173,41 +173,41 @@ C допустимий для:
 - tooling
 - startup-only initialization code
 
-### Де небажано або заборонено
+### Where they are undesirable or forbidden
 
 - packet receive path
-- routing hot-path
+- routing hot path
 - QoS inflight critical paths
 - bounded delivery queues
 - latency-sensitive delivery loops
 
 ---
 
-## 7. Заборонені або небажані фічі
+## 7. Forbidden or discouraged features
 
-## 7.1. Заборонено
+## 7.1. Forbidden
 
-- exceptions як нормальний control flow
+- exceptions as normal control flow
 - RTTI
 - `dynamic_cast`
 - `typeid`
-- `std::shared_ptr` у core
+- `std::shared_ptr` in core
 - `iostream`
 - `std::regex`
-- безконтрольний `new/delete`
-- приховані heap allocations у packet path
-- великі template-heavy абстракції без реальної потреби
+- uncontrolled `new/delete`
+- hidden heap allocations in packet paths
+- large template-heavy abstractions without real value
 
 ---
 
-## 7.2. Сильно не рекомендується
+## 7.2. Strongly discouraged
 
-- `std::function` у hot-path
+- `std::function` in hot paths
 - deep inheritance hierarchies
-- macro-based polymorphism там, де вистачає нормальних інтерфейсів
-- template metaprogramming як стиль архітектури
+- macro-based polymorphism where normal interfaces are sufficient
+- template metaprogramming as an architectural style
 - implicit ownership transfer
-- exception-like error behavior через `abort()` або “silent return false”
+- exception-like error behavior through `abort()` or silent `return false`
 
 ---
 
@@ -215,102 +215,98 @@ C допустимий для:
 
 ## 8.1. SRAM
 
-У внутрішній SRAM повинні жити:
-
+The following should live in internal SRAM:
 - task stacks
 - hot routing metadata
 - transport/session control state
 - frequently accessed indexes
 - small fixed control structures
-- QoS control/state machine data
+- QoS control/state-machine data
 
 ---
 
 ## 8.2. PSRAM
 
-У PSRAM повинні жити:
-
+The following should live in PSRAM:
 - payload buffers
 - retained payload storage
 - bounded queue slabs
 - cold session state
 - diagnostics/history buffers
 - snapshots/checkpoints
-- великі тимчасові буфери, які не є latency-critical
+- large temporary buffers that are not latency-critical
 
 ---
 
 ## 8.3. Allocation policy
 
-У проєкті має бути policy:
-
-- мінімізувати heap allocation у hot-path
-- використовувати bounded pools/slabs/ring buffers
-- уникати allocator-fragmentation-driven дизайну
-- мати окремі бюджети для N8R2 і N16R8
+The project must have a policy to:
+- minimize heap allocation in hot paths
+- use bounded pools/slabs/ring buffers
+- avoid allocator-fragmentation-driven design
+- define separate budgets for `N8R2` and `N16R8`
 
 ---
 
 ## 9. Build system
 
-## 9.1. Основний build
+## 9.1. Primary build
 
 - **CMake**
 - **ESP-IDF build system**
 - **idf_component_register(...)**
 - components-based organization
 
-### Причини вибору
+### Why this choice
 
-- природна інтеграція з ESP-IDF
-- добрий поділ на модулі
-- окремі compile options для компонентів
-- зручний dependency graph
-- природна підтримка multi-component firmware
+- natural ESP-IDF integration
+- good modular separation
+- separate compile options per component
+- convenient dependency graph
+- natural support for multi-component firmware
 
 ---
 
 ## 9.2. Build profiles
 
-Рекомендується мати:
-
+Recommended profiles:
 - `sdkconfig.defaults`
 - `sdkconfig.defaults.n8r2`
 - `sdkconfig.defaults.n16r8`
 - `sdkconfig.defaults.debug`
 - `sdkconfig.defaults.release`
 
-### Призначення профілів
+### Profile purpose
 
-- різні memory budgets
-- різні queue limits
-- різні logging levels
-- різні diagnostics knobs
-- різні transport/persistence/federation feature flags
+- different memory budgets
+- different queue limits
+- different logging levels
+- different diagnostics knobs
+- different transport/persistence/federation feature flags
 
-Build/profile policy не замінює runtime config schema versioning:
-- `sdkconfig.defaults*` задають platform/build defaults
-- runtime `config_loader` повинен працювати з versioned config schema і migration rules
+Build/profile policy does not replace runtime config schema versioning:
+- `sdkconfig.defaults*` define platform/build defaults
+- runtime `config_loader` must work with a versioned config schema and migration rules
 
 ---
 
 ## 9.3. Runtime application seams
 
-На рівні physical stack потрібно відразу закласти:
-- вузький `runtime facade` для app-facing consumers
-- `read model coordinator` і dedicated snapshot builders для published views
-- `operation result store` для non-immediate runtime/admin actions
+At the physical-stack level, the following must be designed in from the beginning:
+- a narrow `runtime facade` for app-facing consumers
+- a `read-model coordinator` and dedicated snapshot builders for published views
+- an `operation result store` for non-immediate runtime/admin actions
 
-Ці seams:
-- не є частиною protocol/routing/session core
-- належать до runtime/application layer
-- повинні бути host-testable без ESP-IDF runtime
+These seams:
+- are not part of protocol/routing/session core
+- belong to the runtime/application layer
+- must be host-testable without ESP-IDF runtime
 
 ---
 
 ## 10. Recommended compile policy
 
-### Для власних C++ компонентів
+### For custom C++ components
 
 - `-std=gnu++20`
 - `-Wall`
@@ -322,7 +318,7 @@ Build/profile policy не замінює runtime config schema versioning:
 - `-Wformat=2`
 - `-Wnon-virtual-dtor`
 
-### Додатково, якщо команда готова
+### Additionally, if the team is ready
 
 - `-Wold-style-cast`
 - `-Wpedantic`
@@ -331,22 +327,21 @@ Build/profile policy не замінює runtime config schema versioning:
 
 ## 10.1. Runtime policy
 
-### Рекомендовано
+### Recommended
 
 - exceptions **OFF**
 - RTTI **OFF**
 - logging level per build profile
-- asserts у debug/test профілях
-- bounded config validation на startup
+- asserts in debug/test profiles
+- bounded config validation at startup
 - version-aware config loading before runtime wiring
 
 ---
 
-## 11. Рекомендована структура директорій
+## 11. Recommended directory structure
 
-Це **фізична реалізація** логічної модульної структури з `docs/architecture/ARCHITECTURE.md`.
-Логічні `/core`, `/ports`, `/adapters`, `/app` відображаються тут у `components/`,
-`main/` і `test/` відповідно до ESP-IDF component model.
+This is the **physical implementation** of the logical modular structure defined in `docs/architecture/ARCHITECTURE.md`.
+The logical `/core`, `/ports`, `/adapters`, and `/app` are mapped here into `components/`, `main/`, and `test/` according to the ESP-IDF component model.
 
 ```text
 project/
@@ -458,44 +453,44 @@ project/
 
 ---
 
-## 12. Ролі модулів
+## 12. Module roles
 
 ## 12.1. `broker_core`
 
-Відповідає за:
-- orchestration доменної логіки
-- життєвий цикл вузла
-- координацію між routing/acl/session/qos/retained
+Responsible for:
+- orchestration of domain logic
+- node lifecycle
+- coordination across routing/ACL/session/QoS/retained
 
-Не повинен містити ESP-IDF details.
+It must not contain ESP-IDF details.
 
 ---
 
 ## 12.2. `protocol_mqtt`
 
-Відповідає за:
+Responsible for:
 - packet parsing
 - packet serialization
 - MQTT-level protocol semantics
 - extensible handling of MQTT 5 properties/reason codes
 
-Не повинен вирішувати high-level routing policy.
+It must not decide high-level routing policy.
 
 ---
 
 ## 12.3. `routing`
 
-Відповідає за:
+Responsible for:
 - topic matching
 - delivery planning
-- route decision
+- route decisions
 - local vs remote forwarding eligibility
 
 ---
 
 ## 12.4. `acl`
 
-Відповідає за:
+Responsible for:
 - publish/subscribe authorization
 - namespace-aware ACL matching
 - default-deny policy evaluation
@@ -504,7 +499,7 @@ project/
 
 ## 12.5. `session`
 
-Відповідає за:
+Responsible for:
 - session lifecycle
 - restore/resume
 - client-associated protocol state
@@ -513,7 +508,7 @@ project/
 
 ## 12.6. `retained`
 
-Відповідає за:
+Responsible for:
 - retained storage semantics
 - retained lookup
 - retained update/delete behavior
@@ -522,7 +517,7 @@ project/
 
 ## 12.7. `qos`
 
-Відповідає за:
+Responsible for:
 - QoS1 inflight state
 - retry tracking
 - ack-driven state transitions
@@ -531,7 +526,7 @@ project/
 
 ## 12.8. `federation`
 
-Відповідає за:
+Responsible for:
 - bridge policies
 - remote subscription propagation
 - dedup / anti-loop metadata
@@ -541,44 +536,43 @@ project/
 
 ## 12.9. `app_runtime`
 
-Відповідає за:
+Responsible for:
 - runtime facade
-- read model coordinator
+- read-model coordinator
 - snapshot builders for app-facing views
 - async operation result store
 
-Не повинен:
-- тягнути protocol/routing/session business logic у facade layer
-- повертати live mutable internals назовні
-- змішувати side-effect execution policy з DTO mapping без окремих seams
+It must not:
+- pull protocol/routing/session business logic into the facade layer
+- return live mutable internals to consumers
+- mix side-effect execution policy with DTO mapping without separate seams
 
 ---
 
 ## 12.10. `ports`
 
-Містить:
-- чисті інтерфейси
-- доменні контракти
-- базові abstract types
+Contains:
+- pure interfaces
+- domain contracts
+- base abstract types
 
-Не тягне ESP-IDF headers.
+It must not include ESP-IDF headers.
 
 ---
 
 ## 12.11. `transport_*`, `storage_*`, `platform_*`
 
-Це adapters, які:
-- перекладають platform API у доменні інтерфейси
-- не повинні містити бізнес-логіки broker core
+These are adapters that:
+- translate platform APIs into domain interfaces
+- must not contain broker-core business logic
 
 ---
 
 ## 13. Interface policy
 
-## 13.1. Основні порти
+## 13.1. Core ports
 
-Рекомендується мати такі інтерфейси:
-
+Recommended interfaces:
 - `IClock`
 - `ILogger`
 - `IMetrics`
@@ -593,37 +587,37 @@ project/
 
 ---
 
-## 13.2. Правила для інтерфейсів
+## 13.2. Interface rules
 
-- headers портів не повинні містити ESP-IDF includes
-- platform handles не повинні “протікати” в core
-- ownership/lifetime expectations повинні бути задокументовані
-- interfaces мають бути маленькими й спеціалізованими
-- великі “god interfaces” заборонені
+- port headers must not contain ESP-IDF includes
+- platform handles must not leak into core
+- ownership/lifetime expectations must be documented
+- interfaces must be small and specialized
+- large "god interfaces" are forbidden
 
 ---
 
-## 14. Error handling policy
+## 14. Error-handling policy
 
-### Використовувати
+### Use
 
 - `enum class ResultCode`
 - `Status`
-- `Expected<T, E>`-подібний підхід
-- `[[nodiscard]]` для критичних результатів
+- an `Expected<T, E>`-like approach
+- `[[nodiscard]]` for critical results
 
-### Не використовувати
+### Do not use
 
-- exceptions як основний механізм
-- `bool` без контексту для важливих API
+- exceptions as the primary mechanism
+- `bool` without context for important APIs
 - silent failure
-- аварійне завершення замість контрольованої помилки там, де можлива деградація
+- crashing instead of controlled failure where graceful degradation is possible
 
 ---
 
 ## 15. Logging and diagnostics stack
 
-### Обов’язково мати
+### Must-have
 
 - structured logs
 - counters
@@ -634,9 +628,9 @@ project/
 - federation diagnostics
 - build-profile-controlled verbosity
 
-### Де допустимий “ширший” STL
+### Where broader STL is acceptable
 
-Саме тут:
+Specifically here:
 - diagnostics
 - config/model formatting
 - test tooling
@@ -648,7 +642,7 @@ project/
 
 ## 16.1. Host-side tests
 
-Для:
+For:
 - routing
 - retained
 - session logic
@@ -657,16 +651,16 @@ project/
 - federation policy
 - config validation
 
-### Мова
+### Language
 - C++20
-- широкий дозволений STL
+- broader allowed STL
 - mocks/fakes
 
 ---
 
 ## 16.2. Integration tests
 
-Для:
+For:
 - transport adapters
 - storage adapters
 - runtime wiring
@@ -677,7 +671,7 @@ project/
 
 ## 16.3. Simulation tests
 
-Для:
+For:
 - multi-node behavior
 - bridge/federation
 - packet loss
@@ -689,7 +683,7 @@ project/
 
 ## 16.4. Hardware tests
 
-Для:
+For:
 - Wi-Fi instability
 - PSRAM pressure
 - long-run soak
@@ -734,9 +728,9 @@ target_compile_options(${COMPONENT_LIB} PRIVATE
 
 ## 18. Platform profiles
 
-## 18.1. N8R2 profile
+## 18.1. `N8R2` profile
 
-Фокус:
+Focus:
 - smaller queues
 - lower retained budgets
 - conservative federation
@@ -745,50 +739,50 @@ target_compile_options(${COMPONENT_LIB} PRIVATE
 
 ---
 
-## 18.2. N16R8 profile
+## 18.2. `N16R8` profile
 
-Фокус:
+Focus:
 - larger retained/session budgets
-- bigger queues
+- larger queues
 - practical standby/federation features
 - richer diagnostics in debug profiles
 - longer soak/performance targets
 
 ---
 
-## 19. Definition of Done для tech stack
+## 19. Definition of Done for the tech stack
 
-Технічний стек вважається правильно зафіксованим, якщо:
+The tech stack is considered correctly established if:
 
-1. Core можна збирати й тестувати без прямої залежності від ESP-IDF runtime.
-2. Усі platform-specific API сидять у adapters.
-3. C++ підмножина задокументована й дотримується.
-4. Exceptions і RTTI вимкнені policy-wise.
-5. STL використовується контрольовано.
-6. Є окремі build profiles для N8R2 і N16R8.
-7. Project structure відповідає component model.
-8. Memory policy явно враховує SRAM vs PSRAM.
-9. App-facing runtime seams зафіксовані окремо від core modules.
+1. Core can be built and tested without a direct dependency on the ESP-IDF runtime.
+2. All platform-specific APIs live in adapters.
+3. The allowed C++ subset is documented and enforced.
+4. Exceptions and RTTI are disabled by policy.
+5. STL usage is controlled.
+6. Separate build profiles exist for `N8R2` and `N16R8`.
+7. Project structure matches the component model.
+8. Memory policy explicitly accounts for SRAM vs PSRAM.
+9. App-facing runtime seams are defined separately from core modules.
 
 ---
 
-## 20. Підсумок
+## 20. Summary
 
-Рекомендований техстек для цього проєкту:
+Recommended tech stack for this project:
 
 - **ESP-IDF 5.x**
-- **C++20** як основна мова
-- **C** для окремих low-level adapter-ів за потреби
+- **C++20** as the primary language
+- **C** for selected low-level adapters where appropriate
 - **components-based project structure**
-- **строго обмежена embedded-safe підмножина STL**
+- **strictly limited embedded-safe STL subset**
 - **exceptions OFF**
 - **RTTI OFF**
-- **чіткий поділ на core / ports / adapters**
+- **clear separation into core / ports / adapters**
 - **host tests + integration tests + hardware tests**
 
-Цей стек найкраще підтримує:
-- чисту архітектуру
-- модульність
-- тестованість
-- контроль ресурсів
-- еволюцію від `Single broker` до `Federated multi-broker`
+This stack best supports:
+- clean architecture
+- modularity
+- testability
+- resource control
+- evolution from `single-broker mode` to `federated multi-broker mode`

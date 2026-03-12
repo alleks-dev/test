@@ -1,49 +1,49 @@
 # SKELETON_PLAN.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ описує практичний план створення першого compileable skeleton-коду MQTT-брокера.
+This document defines the practical plan for creating the first compilable skeleton code of the MQTT broker.
 
-Його ціль:
-- перевести документацію в робочий project skeleton
-- дати чіткий порядок створення `components/`, headers і tests
-- мінімізувати імпровізацію під час перших комітів
-
----
-
-## 2. Принципи першого skeleton milestone
-
-- спочатку compileable structure, потім behavior
-- core повинен збиратися без ESP-IDF runtime
-- ports створюються раніше за adapters
-- fake/test adapters створюються рано, щоб одразу перевірити testability
-- ніякого “тимчасового” порушення dependency rules
+Its goals are to:
+- translate the documentation set into a working project skeleton
+- provide a clear order for creating `components/`, headers, and tests
+- minimize improvisation during the first commits
 
 ---
 
-## 3. Ціль першого milestone
+## 2. Principles of the first skeleton milestone
 
-Після першого skeleton milestone проект повинен мати:
-- валідну ESP-IDF component structure
+- compileable structure first, behavior later
+- core must build without ESP-IDF runtime
+- ports are created before adapters
+- fake/test adapters are created early to prove testability immediately
+- no "temporary" violation of dependency rules
+
+---
+
+## 3. Goal of the first milestone
+
+After the first skeleton milestone, the project must have:
+- a valid ESP-IDF component structure
 - host-buildable core/domain/ports
-- public headers для ключових port contracts
-- мінімальні stub implementations для core modules
-- базовий test harness
-- перші unit tests green
+- public headers for the key port contracts
+- minimal stub implementations for core modules
+- a basic test harness
+- the first unit tests green
 
-Не вимагається на цьому етапі:
-- реальна мережа
-- реальний storage backend
+Not required at this stage:
+- real networking
+- real storage backends
 - production runtime behavior
 - full MQTT protocol implementation
 
 ---
 
-## 4. Структура, яку створюємо першою
+## 4. Structure to create first
 
 ### 4.1. Root files
 
-Створити:
+Create:
 - `CMakeLists.txt`
 - `partitions.csv`
 - `sdkconfig.defaults`
@@ -54,17 +54,17 @@
 
 ### 4.2. Main/runtime
 
-Створити:
+Create:
 - `main/CMakeLists.txt`
 - `main/app_main.cpp`
 
-Перший `app_main` повинен:
-- лише збирати runtime graph
-- не містити бізнес-логіки
+The first `app_main` must:
+- only assemble the runtime graph
+- contain no business logic
 
 ### 4.3. Components
 
-Створити порожні, але валідні `components/`:
+Create empty but valid `components/`:
 - `broker_core`
 - `protocol_mqtt`
 - `routing`
@@ -79,14 +79,15 @@
 - `storage_psram`
 - `diagnostics`
 - `platform_runtime`
+- `app_runtime`
 
 ---
 
-## 5. Headers, які створюються першими
+## 5. Headers created first
 
 ### 5.1. Domain headers
 
-Перші domain headers:
+First domain headers:
 - `message.hpp`
 - `subscription.hpp`
 - `delivery_target.hpp`
@@ -95,7 +96,7 @@
 
 ### 5.2. Port headers
 
-Перші public port headers:
+First public port headers:
 - `transport_endpoint_port.hpp`
 - `transport_listener_port.hpp`
 - `session_store_port.hpp`
@@ -110,7 +111,7 @@
 
 ### 5.3. Core public headers
 
-Перші core-facing headers:
+First core-facing headers:
 - `broker_core.hpp`
 - `protocol_mqtt.hpp`
 - `routing.hpp`
@@ -122,25 +123,25 @@
 
 Rules:
 - public headers expose contracts, not internal platform details
-- initial methods may be stubbed but signatures must respect `docs/architecture/MODULE_CONTRACTS.md`
+- initial methods may be stubbed, but signatures must respect `docs/architecture/MODULE_CONTRACTS.md`
 
 ### 5.4. Test-only access headers
 
-Якщо модулю потрібен test-only seam, він повинен створюватися окремо:
+If a module requires a test-only seam, create it separately:
 - `broker_core_test_access.hpp`
 - `session_test_access.hpp`
 - `routing_test_access.hpp`
 
 Rules:
-- production code не повинен залежати від цих headers
-- вони не замінюють нормальні public contracts
-- вони використовуються лише там, де fake ports/black-box tests недостатні
+- production code must not depend on these headers
+- they do not replace normal public contracts
+- they are used only where fake ports/black-box tests are insufficient
 
 ---
 
-## 6. Порядок створення модулів
+## 6. Module creation order
 
-Рекомендований порядок:
+Recommended order:
 1. domain types
 2. result/error primitives
 3. event primitives
@@ -155,34 +156,34 @@ Rules:
 12. `broker_core` stub
 13. fake test adapters
 14. runtime wiring stub
-15. real platform adapters scaffolding
+15. real platform-adapter scaffolding
 
 Reason:
 - domain and ports stabilize contracts
 - fake test adapters enable host-side tests early
-- `broker_core` should be composed after module contracts exist
+- `broker_core` should be assembled only after module contracts exist
 
 ---
 
-## 7. Stub implementation policy
+## 7. Stub-implementation policy
 
-Перші implementations можуть:
-- повертати `ERR_UNSUPPORTED_FEATURE`
-- повертати empty/no-op plans where contract allows
-- логувати `not implemented` only in debug/test mode
+First implementations may:
+- return `ERR_UNSUPPORTED_FEATURE`
+- return empty/no-op plans where the contract allows that
+- log `not implemented` only in debug/test mode
 
-Перші implementations не можуть:
-- порушувати dependency rules
-- тягнути ESP-IDF в core
-- маскувати not-implemented state як успішну поведінку
+First implementations may not:
+- violate dependency rules
+- pull ESP-IDF into core
+- pretend success when the feature is not implemented
 
 ---
 
-## 8. Test harness, який потрібен одразу
+## 8. Test harness required immediately
 
 ### 8.1. Host test base
 
-Створити:
+Create:
 - fake `IClock`
 - fake `ISubscriptionIndex`
 - fake `IAclPolicy`
@@ -190,101 +191,76 @@ Reason:
 - fake `ISessionStore`
 - fake `IRetainedStore`
 - fake `IFederationLink`
-- fake event capture sink
+- fake event-capture sink
 
 ### 8.2. Minimal integration harness
 
-Створити:
+Create:
 - in-memory runtime wiring for core modules
 - no real socket/network/storage requirement
 
 ---
 
-## 9. Перші 10 тести
+## 9. The first 10 tests
 
-Перші тести, які мають з’явитися рано:
-1. topic matching exact/wildcard basics
+The first tests that must appear early:
+1. topic-matching exact/wildcard basics
 2. `ISubscriptionIndex` add/remove/query basics
-3. `IAclPolicy` default deny behavior
+3. `IAclPolicy` default-deny behavior
 4. `IRouterPolicy` local-only vs exportable decision
-5. `routing` returns deterministic empty/no-match result
+5. `routing` returns a deterministic empty/no-match result
 6. `retained` create/update/delete semantics
-7. `qos` timeout logic with fake clock
-8. `config_loader` current schema parse
-9. `config_loader` previous version migration
-10. event capture deterministic ordering for publish path
+7. `qos` timeout logic with a fake clock
+8. `config_loader` current-schema parse
+9. `config_loader` previous-version migration
+10. deterministic event-capture ordering for the publish path
 
 ---
 
-## 10. First compileable milestone definition
+## 10. First compilable milestone definition
 
-Milestone вважається досягнутим, якщо:
+The milestone is reached if:
 - `components/` structure exists
 - all public headers compile
-- host-side test target builds
+- the host-side test target builds
 - no core module includes ESP-IDF headers
-- fake adapters satisfy required ports
-- first 10 tests pass
+- fake adapters satisfy the required ports
+- the first 10 tests pass
 
 ---
 
 ## 11. Early CMake rules
 
-- architecture check target повинен існувати рано, навіть якщо codebase ще мала
-- `scripts/check_arch_invariants.sh` має входити в локальний і CI bootstrap bundle
+- an architecture-check target must exist early, even if the codebase is still small
+- `scripts/check_arch_invariants.sh` must be part of the local and CI bootstrap bundle
 
-На старті:
-- `ports` independent component
-- each core module separate component where practical
-- `diagnostics` separate from core
-- host test build for domain/core/ports independent from ESP-IDF runtime
+At the start:
+- `ports` is an independent component
+- each core module is a separate component where practical
+- `diagnostics` is separate from core
+- host test builds for domain/core/ports are independent of ESP-IDF runtime
 
 Avoid:
-- monolithic `broker_core` component that absorbs all logic
-- adapter code linked into core test target
+- a monolithic `broker_core` component that absorbs all logic
+- adapter code linked into the core test target
 
 ---
 
 ## 12. First runtime scope
 
-Перший runtime scope повинен бути мінімальним:
-- one in-process broker instance
-- in-memory config
-- fake/in-memory adapters where possible
-- no Wi-Fi dependency
-- no persistence dependency
+The first runtime scope must be minimal:
+- runtime graph assembly
+- basic config loading
+- basic diagnostics wiring
+- no operational admin surface beyond what is needed for startup/testing
 
 ---
 
-## 13. Review checklist for skeleton PRs
+## 13. First milestone Definition of Done
 
-Для кожного skeleton PR перевіряти:
-1. Чи не порушено `docs/architecture/DEPENDENCY_RULES.md`
-2. Чи відповідають signatures `docs/architecture/MODULE_CONTRACTS.md`
-3. Чи є host-side buildability
-4. Чи не з’явився platform leakage у core
-5. Чи є хоча б один test або compile check на новий контракт
-
----
-
-## 14. Next milestone after skeleton
-
-Після skeleton milestone переходити до:
-- real topic matching
-- real subscription index behavior
-- basic routing
-- retained semantics
-- QoS1 core state machine
-- config loader implementation
-- event emission wiring
-
----
-
-## 15. Implementation note
-
-Якщо під час створення skeleton виникає спокуса:
-- “тимчасово” змішати adapter і core
-- “тимчасово” прибрати port
-- “тимчасово” покласти логіку в `app_main`
-
-це сигнал, що skeleton plan порушується і треба виправити дизайн до написання коду, а не після.
+The first skeleton milestone is complete if:
+- the repository structure matches the architectural model
+- the initial headers define the key contracts
+- host-side fake adapters prove test seams exist
+- CI/local scripts can verify the skeleton mechanically
+- there is no architectural debt hidden as "temporary startup code"

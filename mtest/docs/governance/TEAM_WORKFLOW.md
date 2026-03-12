@@ -1,15 +1,15 @@
 # TEAM_WORKFLOW.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ фіксує практичний workflow команди навколо архітектурних правил, локальних перевірок і PR discipline.
+This document defines the practical team workflow around architecture rules, local checks, and PR discipline.
 
-Його цілі:
-- зробити правила з документації щоденною робочою практикою
-- дати мінімальний local verification bundle до PR
-- прив'язати review до `rule_id`, а не до розмитих побажань
+Its goals are to:
+- turn the documentation rules into daily engineering practice
+- define the minimum local verification bundle before a PR
+- tie reviews to `rule_id` values instead of vague expectations
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
 - `docs/governance/CI_RULES.md`
 - `docs/planning/SKELETON_PLAN.md`
@@ -22,7 +22,7 @@
 
 ## 2. Source of truth
 
-Архітектурним source of truth вважаються:
+The architecture source of truth is:
 - `docs/architecture/ARCHITECTURE.md`
 - `docs/architecture/MODULE_CONTRACTS.md`
 - `docs/architecture/DEPENDENCY_RULES.md`
@@ -34,90 +34,90 @@
 - `docs/architecture/RUNTIME_EXECUTION_MODEL.md`
 - `docs/architecture/ASYNC_OPERATION_MODEL.md`
 
-Якщо код або PR їм суперечить, пріоритет мають ці документи.
+If code or a PR conflicts with these documents, the documents win.
 
 ---
 
-## 3. Робочий цикл розробника
+## 3. Developer workflow
 
-Перед зміною коду або skeleton structure розробник повинен:
-- визначити affected module
-- звірити relevant contracts і dependency rules
-- зрозуміти, які `rule_id` можуть бути зачеплені
+Before changing code or the skeleton structure, the developer must:
+- identify the affected module
+- check the relevant contracts and dependency rules
+- understand which `rule_id` values may be affected
 
-Під час зміни:
-- не змішувати архітектурний refactor і behavior change без потреби
-- додавати tests разом із новою поведінкою
-- не вводити undocumented temporary bypass
+During the change:
+- do not mix architectural refactoring and behavior changes unless necessary
+- add tests together with new behavior
+- do not introduce undocumented temporary bypasses
 
-Після зміни:
-- запустити локальний check bundle
-- перевірити, чи потрібне оновлення docs/contracts
+After the change:
+- run the local check bundle
+- verify whether docs/contracts must be updated
 
 ---
 
-## 4. Обов'язковий local verification bundle
+## 4. Required local verification bundle
 
-Перед PR розробник повинен запустити:
+Before opening a PR, the developer must run:
 - `scripts/run_blocking_local_checks.sh`
-- host build relevant targets
+- relevant host build targets
 - relevant unit tests
-- config/schema related tests, якщо зачеплено config/runtime
-- event tests, якщо змінено event emission behavior
+- config/schema-related tests if config/runtime was touched
+- event tests if event-emission behavior changed
 
-Не дозволяється відкривати PR з формулюванням "CI нехай покаже".
+Opening a PR with the assumption that "CI will show it" is not acceptable.
 
 ---
 
 ## 5. PR policy
 
-Кожен PR повинен:
-- бути вузьким за scope
-- посилатися на affected module(s)
-- описувати зміну поведінки або зміну structure/contracts
-- явно згадувати exception, якщо він потрібен
+Every PR must:
+- be narrow in scope
+- reference the affected module(s)
+- describe either a behavior change or a structure/contract change
+- explicitly mention an exception if one is required
 
-Якщо PR порушує правило з `docs/governance/ARCH_COMPLIANCE_MATRIX.md`, у ньому повинно бути:
-- `rule_id`
-- посилання на запис у `docs/governance/ADR_EXCEPTIONS.md`
+If a PR violates a rule from `docs/governance/ARCH_COMPLIANCE_MATRIX.md`, it must include:
+- the `rule_id`
+- a reference to the entry in `docs/governance/ADR_EXCEPTIONS.md`
 
 ---
 
 ## 6. Review policy
 
-Reviewer повинен перевіряти:
-- чи не зламано dependency boundaries
-- чи є coverage для нової поведінки
-- чи не потрапив platform code в core/public headers
-- чи не з'явились macro-gated test hooks у production API
+The reviewer must check:
+- whether dependency boundaries are still intact
+- whether there is coverage for new behavior
+- whether platform code leaked into core/public headers
+- whether macro-gated test hooks appeared in production APIs
 
-Коментарі рівня "looks fine" без перевірки rule-sensitive місць недостатні.
+"Looks fine" is not a sufficient review for rule-sensitive changes.
 
 ---
 
 ## 7. Definition of Ready
 
-Задача готова до реалізації, якщо:
-- зрозумілий affected module set
-- визначені потрібні contracts/tests
-- відомо, чи зачіпається config/error/event model
+A task is ready for implementation if:
+- the affected module set is understood
+- the needed contracts/tests are identified
+- it is known whether config/error/event models are affected
 
 ---
 
 ## 8. Definition of Done
 
-Зміна вважається завершеною, якщо:
-- локальні checks пройдені
-- CI rules виконані
-- affected docs/contracts оновлені
-- немає неописаних архітектурних винятків
+A change is complete if:
+- local checks passed
+- CI rules are satisfied
+- affected docs/contracts were updated
+- there are no undocumented architecture exceptions
 
 ---
 
 ## 9. Workflow anti-patterns
 
-Заборонено:
-- "тимчасово" обійти правило без exception record
-- додавати behavior без tests
-- переносити policy logic у `main/app_main`
-- змінювати public API без compile/test coverage
+Forbidden:
+- bypassing a rule "temporarily" without an exception record
+- adding behavior without tests
+- moving policy logic into `main/app_main`
+- changing a public API without compile/test coverage

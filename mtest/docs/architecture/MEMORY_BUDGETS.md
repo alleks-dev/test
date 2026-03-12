@@ -1,246 +1,173 @@
 # MEMORY_BUDGETS.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ фіксує стартові memory budgets для MQTT-брокера на ESP32-S3.
+This document defines the memory budget policy for the MQTT broker across the target ESP32-S3 profiles.
 
-Його цілі:
-- задати практичні ліміти до початку реалізації
-- відокремити SRAM-critical і PSRAM-friendly дані
-- дати основу для config limits, tests і performance gates
+Its goals are to:
+- make SRAM/PSRAM limits explicit
+- define operational soft/hard limits
+- provide a basis for config validation, tests, and profile-specific tuning
 
-Це не остаточні “максимуми заліза”, а нормативні робочі бюджети для безпечного старту.
-
----
-
-## 2. Основні принципи
-
-- hot-path data повинні жити в SRAM
-- cold/bulk data повинні жити в PSRAM
-- packet path не повинен покладатися на unbounded heap allocation
-- усі бюджети повинні мати `soft limit` і `hard limit`
-- N8R2 і N16R8 мають різні профілі, навіть якщо кодова база одна
+This document aligns with:
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/TECH_STACK.md`
+- `docs/architecture/CONFIG_SCHEMA.md`
+- `docs/testing/TEST_STRATEGY.md`
 
 ---
 
-## 3. Типи бюджетів
+## 2. Core principles
+
+- memory is part of the architecture contract
+- every important queue/store/index must be bounded
+- `N8R2` and `N16R8` are different operational profiles
+- soft limits warn and shape tuning
+- hard limits must not be exceeded by normalized configuration
+
+---
+
+## 3. Limit model
 
 ### 3.1. Soft limit
 
-Рівень, який система може стабільно тримати в normal operation.
+A soft limit means:
+- the system should normally stay below it
+- crossing it is a warning/tuning signal
+- it may still be acceptable in debug/test or burst scenarios
 
 ### 3.2. Hard limit
 
-Рівень, після якого нові allocations/clients/messages повинні:
-- відхилятися явно
-- логуватися
-- відображатися в metrics
+A hard limit means:
+- normalized config must not exceed it
+- runtime must reject/stop growth before crossing it if possible
+- tests should assert that the contract is respected
 
 ---
 
-## 4. SRAM / PSRAM policy
+## 4. Placement policy
 
-### 4.1. SRAM
+### 4.1. Internal SRAM
 
-У SRAM повинні жити:
-- routing metadata
-- subscription index hot structures
-- session control state
-- QoS inflight control data
+Prefer internal SRAM for:
+- hot routing metadata
 - task stacks
-- lock-free/bounded control queues
-- frequently touched event metadata
+- frequently accessed indexes
+- session/QoS control structures
+- small fixed control blocks
 
 ### 4.2. PSRAM
 
-У PSRAM повинні жити:
+Prefer PSRAM for:
 - payload buffers
 - retained payload storage
-- queue slabs
+- large queue slabs
 - cold session state
 - diagnostics/history buffers
-- snapshot/checkpoint buffers
-- temporary serialization buffers that are not latency-critical
+- published snapshots if not latency-critical
 
 ---
 
-## 5. N8R2 working budget
+## 5. Profile definitions
 
-Профіль:
-- single broker first
-- conservative retained usage
-- limited bridge-ready operation
+## 5.1. `N8R2`
 
-### 5.1. SRAM budget targets
+This is the conservative profile.
 
-- broker runtime core state: `<= 96 KB` soft, `<= 128 KB` hard
-- task stacks total: `<= 48 KB` soft, `<= 64 KB` hard
-- routing/subscription hot structures: `<= 24 KB` soft, `<= 32 KB` hard
-- QoS/session hot control state: `<= 16 KB` soft, `<= 24 KB` hard
+Recommended characteristics:
+- smaller queues
+- lower retained budgets
+- lower session budgets
+- minimal federation/standby expectations
+- reduced diagnostics in release mode
 
-### 5.2. PSRAM budget targets
+### `N8R2` example working envelope
 
-- payload/queue buffers: `<= 256 KB` soft, `<= 384 KB` hard
-- retained payload storage: `<= 128 KB` soft, `<= 192 KB` hard
-- diagnostics/history/snapshots: `<= 96 KB` soft, `<= 128 KB` hard
+Target direction:
+- clients: low-to-medium
+- retained entries: conservative
+- payload size: stricter
+- snapshot buffers: bounded tightly
+- queue depth: moderate and explicitly capped
 
-### 5.3. Functional limits
+## 5.2. `N16R8`
 
-- max concurrently connected clients: `8` soft, `12` hard
-- max retained messages: `128` soft, `192` hard
-- max subscriptions total: `256` soft, `384` hard
-- max inflight QoS1 entries: `32` soft, `48` hard
-- max queue depth per client: `16` soft, `24` hard
-- max payload size accepted by broker: `16 KB` soft, `24 KB` hard
-- max topic length: `256 B` soft, `512 B` hard
+This is the broader-capacity profile.
 
----
+Recommended characteristics:
+- larger retained/session budgets
+- deeper queues
+- more practical federation/standby scenarios
+- richer diagnostics in debug modes
 
-## 6. N16R8 working budget
+### `N16R8` example working envelope
 
-Профіль:
-- stronger single broker
-- practical bridge/federation preparation
-- larger retained/session capacity
-
-### 6.1. SRAM budget targets
-
-- broker runtime core state: `<= 128 KB` soft, `<= 160 KB` hard
-- task stacks total: `<= 64 KB` soft, `<= 80 KB` hard
-- routing/subscription hot structures: `<= 40 KB` soft, `<= 56 KB` hard
-- QoS/session hot control state: `<= 24 KB` soft, `<= 32 KB` hard
-
-### 6.2. PSRAM budget targets
-
-- payload/queue buffers: `<= 512 KB` soft, `<= 768 KB` hard
-- retained payload storage: `<= 256 KB` soft, `<= 384 KB` hard
-- diagnostics/history/snapshots: `<= 160 KB` soft, `<= 256 KB` hard
-
-### 6.3. Functional limits
-
-- max concurrently connected clients: `16` soft, `24` hard
-- max retained messages: `256` soft, `384` hard
-- max subscriptions total: `512` soft, `768` hard
-- max inflight QoS1 entries: `64` soft, `96` hard
-- max queue depth per client: `32` soft, `48` hard
-- max payload size accepted by broker: `32 KB` soft, `48 KB` hard
-- max topic length: `512 B` soft, `768 B` hard
+Target direction:
+- clients: medium
+- retained entries: medium/high relative to `N8R2`
+- payload size: more permissive, still bounded
+- snapshot buffers: larger but explicit
+- queue depth: deeper than `N8R2`, still capped
 
 ---
 
-## 7. Per-object budgeting assumptions
+## 6. Budget categories
 
-Ці оцінки потрібні для ранніх config calculations і tests.
-
-### 7.1. Subscription entry
-
-Цільова оцінка:
-- hot metadata per subscription: `48-80 B`
-
-### 7.2. Session control block
-
-Цільова оцінка:
-- hot session control: `96-160 B`
-
-### 7.3. QoS inflight entry
-
-Цільова оцінка:
-- per-entry hot state: `48-96 B`
-
-### 7.4. Retained metadata entry
-
-Цільова оцінка:
-- retained metadata without payload: `48-72 B`
-
-### 7.5. Event record
-
-Цільова оцінка:
-- event metadata record: `32-64 B`
+The budget model must cover at least:
+- max clients
+- max subscriptions
+- max retained entries
+- max retained payload size
+- max inflight QoS entries
+- max queue depth
+- max payload buffer size
+- max topic length
+- snapshot/read-model budget
+- diagnostics/history budget
+- async operation tracking budget
 
 ---
 
-## 8. Budget enforcement policy
+## 7. Required config fields
 
-При досягненні `soft limit` система повинна:
-- піднімати warning metric
-- писати structured warning log
-- зберігати high-water mark
-
-При досягненні `hard limit` система повинна:
-- відхиляти новий workload явно
-- повертати explicit error/status
-- не намагатися “тихо” виживати через неконтрольовані allocation retries
+The runtime configuration must expose enough fields to bind memory behavior, including:
+- memory profile identity
+- queue limits
+- retained limits
+- session limits
+- payload/topic limits
+- diagnostics/snapshot budgets where relevant
 
 ---
 
-## 9. Config fields that must exist
+## 8. Observability requirements
 
-У versioned runtime config повинні бути окремі поля для:
-- `max_clients`
-- `max_subscriptions`
-- `max_retained_messages`
-- `max_inflight_qos1`
-- `max_queue_depth_per_client`
-- `max_payload_size`
-- `max_topic_length`
-- `sram_soft_limit`
-- `sram_hard_limit`
-- `psram_soft_limit`
-- `psram_hard_limit`
-
----
-
-## 10. Required metrics
-
-Система повинна збирати:
-- SRAM high-water mark
-- PSRAM high-water mark
-- retained storage bytes
-- queue slab bytes
+The system should expose at least:
+- memory high-water marks
+- queue occupancy
+- retained count
 - inflight count
-- connected clients count
-- subscriptions count
-- allocation failures by category
-- limit rejects by category
+- snapshot-buffer pressure where measurable
+- operation-result-store occupancy where relevant
 
 ---
 
-## 11. Test gates
+## 9. Test gates
 
-### 11.1. Host/integration
-
-Потрібні:
-- budget calculation tests
-- queue limit tests
-- retained limit tests
-- client/subscription limit tests
-- QoS inflight limit tests
-- payload/topic length reject tests
-
-### 11.2. Hardware
-
-Потрібні:
-- SRAM high-water verification
-- PSRAM pressure tests
-- retained heavy-load tests
-- reconnect under near-limit conditions
-- long-run tests without unbounded growth
+Memory-budget work is incomplete unless tests exist for:
+- queue limit enforcement
+- retained limit enforcement
+- payload/topic size limit enforcement
+- profile-specific rejection of oversized configs
+- pressure scenarios near soft/hard thresholds
 
 ---
 
-## 12. Change policy
+## 10. Definition of Done for memory budgets
 
-Будь-яка зміна бюджетів повинна:
-- бути явно відображена в config defaults/profiles
-- супроводжуватися test updates
-- супроводжуватися metrics threshold updates
-- бути перевірена окремо для `N8R2` і `N16R8`
-
----
-
-## 13. Initial implementation note
-
-На першому milestone краще:
-- стартувати нижче soft limits
-- залишити запас для observability, config migration, MQTT 5-ready metadata
-- піднімати ліміти лише після вимірів, а не припущень
+Memory budgets are considered established if:
+- `N8R2` and `N16R8` profiles are separated
+- soft/hard limits are conceptually explicit
+- important data structures are bounded
+- config schema can represent and validate the limits
+- test strategy contains budget/pressure checks

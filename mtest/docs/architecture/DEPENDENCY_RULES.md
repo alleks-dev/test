@@ -1,15 +1,15 @@
 # DEPENDENCY_RULES.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ фіксує допустимі залежності між модулями MQTT-брокера для ESP32-S3.
+This document defines the allowed dependencies between MQTT-broker modules for ESP32-S3.
 
-Його ціль:
-- запобігти architectural drift під час реалізації
-- зробити модульні межі перевірюваними
-- дати основу для code review, CMake wiring і include policy
+Its goals are to:
+- prevent architectural drift during implementation
+- make module boundaries verifiable
+- provide a basis for code review, CMake wiring, and include policy
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/architecture/ARCHITECTURE.md`
 - `docs/architecture/TECH_STACK.md`
 - `docs/architecture/CODING_GUIDELINES.md`
@@ -17,24 +17,24 @@
 
 ---
 
-## 2. Основний принцип
+## 2. Core principle
 
-Залежності повинні прямувати:
-- від `app/runtime` до `core` і `ports`
-- від `adapters` до `ports`
-- від `core` до `domain types` і `ports`
+Dependencies must flow:
+- from `app/runtime` to `core` and `ports`
+- from `adapters` to `ports`
+- from `core` to `domain types` and `ports`
 
-Залежності не повинні прямувати:
-- від `core` до `adapters`
-- від `core` до ESP-IDF/platform APIs
-- від `ports` до `core`
-- від `ports` до `adapters`
+Dependencies must not flow:
+- from `core` to `adapters`
+- from `core` to ESP-IDF/platform APIs
+- from `ports` to `core`
+- from `ports` to `adapters`
 
 ---
 
-## 3. Логічні шари
+## 3. Logical layers
 
-Використовуємо такі логічні групи:
+We use the following logical groups:
 - `domain model`
 - `core modules`
 - `ports`
@@ -45,7 +45,7 @@
 
 ### 3.1. `domain model`
 
-Включає:
+Includes:
 - `Message`
 - `Subscription`
 - `DeliveryTarget`
@@ -53,7 +53,7 @@
 
 ### 3.2. `core modules`
 
-Включає:
+Includes:
 - `broker_core`
 - `protocol_mqtt`
 - `routing`
@@ -65,7 +65,7 @@
 
 ### 3.3. `ports`
 
-Включає:
+Includes:
 - `ITransportEndpoint`
 - `ITransportListener`
 - `ISessionStore`
@@ -80,7 +80,7 @@
 
 ### 3.4. `adapters`
 
-Включає:
+Includes:
 - `transport_tcp`
 - `storage_nvs`
 - `storage_psram`
@@ -92,11 +92,13 @@
 
 ### 3.5. `app/runtime`
 
-Включає:
+Includes:
 - `node_runtime`
 - `config_loader`
+- `runtime_facade`
+- `read_model_coordinator`
+- `operation_result_store`
 - `admin_api`
-- `app_main`
 
 ---
 
@@ -104,11 +106,11 @@
 
 ### 4.1. `domain model`
 
-Може залежати від:
+May depend on:
 - standard utility types
 - other domain types
 
-Не може залежати від:
+May not depend on:
 - `core modules`
 - `ports`
 - `adapters`
@@ -117,11 +119,11 @@
 
 ### 4.2. `ports`
 
-Можуть залежати від:
+May depend on:
 - `domain model`
 - standard utility types
 
-Не можуть залежати від:
+May not depend on:
 - `core modules`
 - `adapters`
 - `app/runtime`
@@ -129,12 +131,12 @@
 
 ### 4.3. `core modules`
 
-Можуть залежати від:
+May depend on:
 - `domain model`
 - `ports`
-- other `core modules`, якщо це явно дозволено нижче
+- other `core modules`, if explicitly allowed below
 
-Не можуть залежати від:
+May not depend on:
 - `adapters`
 - `app/runtime`
 - ESP-IDF/platform APIs
@@ -142,40 +144,40 @@
 
 ### 4.4. `adapters`
 
-Можуть залежати від:
+May depend on:
 - `ports`
-- `domain model`, якщо це потрібно для port payloads/contracts
+- `domain model`, if needed for port payloads/contracts
 - platform APIs
 
-Не можуть залежати від:
+May not depend on:
 - `app/runtime` business logic
-- внутрішні core implementation details поза port contracts
+- internal core implementation details outside port contracts
 
 ### 4.5. `app/runtime`
 
-Може залежати від:
+May depend on:
 - `core modules`
 - `ports`
 - `adapters`
 - config/model utilities
 
-Не повинна:
-- містити дублікат domain/policy logic
-- напряму вирішувати routing/ACL/QoS semantics
+Must not:
+- contain duplicate domain/policy logic
+- decide routing/ACL/QoS semantics directly
 
 ### 4.6. `diagnostics`
 
-`diagnostics` як фізичний компонент відповідає за:
+The physical `diagnostics` component is responsible for:
 - `logger`
 - `metrics`
 - `tracing`
 
-Може залежати від:
+It may depend on:
 - `ports`
 - `domain model`
-- platform APIs, якщо це backend adapter
+- platform APIs if it is a backend adapter
 
-Не може змушувати `core` знати backend details.
+It must not force `core` to know backend details.
 
 ---
 
@@ -183,7 +185,7 @@
 
 ### 5.1. `broker_core`
 
-Може залежати від:
+May depend on:
 - `protocol_mqtt`
 - `routing`
 - `acl`
@@ -196,11 +198,11 @@
 
 ### 5.2. `protocol_mqtt`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - lightweight protocol packet model
 
-Не повинен залежати від:
+Must not depend on:
 - `routing`
 - `acl`
 - `session`
@@ -208,199 +210,206 @@
 - `qos`
 - `federation`
 
-Примітка:
-- orchestration і виклик інших модулів робить `broker_core`, не `protocol_mqtt`
+Note:
+- orchestration and calls to other modules are owned by `broker_core`, not by `protocol_mqtt`
 
 ### 5.3. `routing`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - `ISubscriptionIndex`
 - `IAclPolicy`
 - `IRouterPolicy`
 
-Не повинен залежати від:
-- `transport` adapters
+Must not depend on:
+- transport adapters
 - storage adapters
 - `session` implementation details
 
 ### 5.4. `acl`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - config/policy model
 
-Не повинен залежати від:
+Must not depend on:
 - transport/session internals
 - adapter code
 
 ### 5.5. `session`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - `ISessionStore`
 
-Може взаємодіяти з:
-- `ISubscriptionIndex` через `broker_core` orchestration
-
-Не повинен напряму залежати від:
-- `routing`
-- `transport` adapters
+Must not depend on:
+- storage adapter details
+- transport platform handles
 
 ### 5.6. `retained`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - `IRetainedStore`
 
-Не повинен залежати від:
-- adapter implementations
-- transport concerns
+Must not depend on:
+- storage adapter implementation details
+- transport code
 
 ### 5.7. `qos`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - `IClock`
 
-Не повинен залежати від:
-- transport adapters
-- storage adapters
+Must not depend on:
+- transport adapter details
+- scheduler/task APIs directly
 
 ### 5.8. `federation`
 
-Може залежати від:
+May depend on:
 - `domain model`
 - `IFederationLink`
 - `IRouterPolicy`
 
-Не повинен залежати від:
-- конкретного broker-link transport implementation
-- app/runtime wiring
+Must not depend on:
+- concrete bridge transport implementation
+- socket APIs
 
 ---
 
-## 6. Include policy
+## 6. App/runtime dependency rules
 
-### 6.1. Core headers
+### 6.1. `runtime_facade`
 
-Core headers:
-- можуть include-ити domain headers
-- можуть include-ити port headers
-- не можуть include-ити ESP-IDF headers
-- не можуть include-ити adapter headers
+May depend on:
+- read-model DTOs/builders/coordinator
+- operation result store
+- app/runtime-safe contracts
 
-### 6.2. Port headers
+Must not depend on:
+- raw mutable core state layout
+- adapter internals bypassing core/runtime boundaries
 
-Port headers:
-- можуть include-ити domain headers
-- не можуть include-ити core private headers
-- не можуть include-ити platform headers
+### 6.2. `read_model_coordinator`
 
-### 6.3. Adapter headers
+May depend on:
+- app/runtime DTOs
+- snapshot builders
+- runtime summaries/state notifications
 
-Adapter headers:
-- можуть include-ити port headers
-- можуть include-ити platform headers
-- не повинні expose-ити platform handles через public contracts core-facing API
+Must not depend on:
+- web/admin serialization details
+- platform APIs not required by the runtime boundary
 
-### 6.4. App/runtime headers
+### 6.3. `operation_result_store`
 
-App/runtime:
-- можуть include-ити core, ports, adapters
-- не повинні створювати нові крос-залежності між core modules через shared god header
+May depend on:
+- result/status DTOs
+- clock abstractions where required
 
----
-
-## 7. CMake dependency policy
-
-Для ESP-IDF `components/`:
-- `ports` не `REQUIRES` core modules
-- core components `REQUIRES` only `ports` and strictly needed sibling core contracts
-- adapter components `REQUIRES` `ports` and platform/runtime libs
-- `main`/runtime component збирає все разом
-
-Bad examples:
-- `routing` depends on `transport_tcp`
-- `ports` depends on `routing`
-- `protocol_mqtt` depends on `storage_nvs`
-
-Good examples:
-- `routing` depends on `ports`
-- `storage_nvs` depends on `ports`
-- `main` depends on `broker_core`, `routing`, `ports`, `transport_tcp`, `storage_nvs`
+Must not depend on:
+- transport/storage adapter internals
+- long-lived domain-state ownership
 
 ---
 
-## 8. Test dependency rules
+## 7. Include policy
 
-### 8.1. Host tests
+### 7.1. Public headers
 
-Можуть залежати від:
-- `domain model`
-- `core modules`
-- fake/mock implementations of `ports`
+Public headers must:
+- include only what they need
+- avoid platform leakage
+- compile standalone in host builds
+
+### 7.2. Forbidden includes
+
+Forbidden in `core` or `ports` public headers:
+- ESP-IDF headers
+- FreeRTOS headers
+- lwIP headers
+- socket headers
+- NVS types/handles
+
+### 7.3. Test-only access
+
+If test-only access is required:
+- use a separate `*_test_access.hpp`
+- do not place macro-gated test hooks in production headers
+
+---
+
+## 8. CMake dependency policy
+
+At the build-graph level:
+- each core module should be a separate component where practical
+- adapters depend on ports, not the other way around
+- app/runtime may wire everything together
+- forbidden dependencies must be caught mechanically where possible
+
+---
+
+## 9. Test dependency rules
+
+### 9.1. Host tests
+
+Host tests may depend on:
+- core modules
+- domain model
+- ports
+- fake adapters
 - broader STL/test tooling
 
-Не повинні залежати від:
-- real ESP-IDF runtime
-- concrete hardware/network stack
+Host tests must not require:
+- ESP-IDF runtime
+- platform sockets/tasks/NVS
 
-### 8.2. Integration tests
+### 9.2. Integration tests
 
-Можуть залежати від:
-- `core modules`
-- `ports`
-- selected real adapters
+Integration tests may depend on:
+- runtime wiring
+- real or semi-real adapters
+- bounded platform layers
 
-### 8.3. Simulation tests
+### 9.3. Simulation tests
 
-Можуть залежати від:
-- `core modules`
-- fake `IFederationLink`
-- fake clock
-- controlled multi-node harness
-
-### 8.4. Hardware tests
-
-Можуть залежати від:
-- full runtime wiring
-- platform adapters
-- real hardware behavior
+Simulation tests may depend on:
+- fake federation links
+- fake nodes
+- fake clocks
+- deterministic event capture
 
 ---
 
-## 9. Forbidden dependency patterns
+## 10. Forbidden patterns
 
-Заборонено:
-- `core -> adapter`
-- `core -> ESP-IDF`
-- `routing -> socket descriptor`
-- `acl -> session socket identity`
-- `protocol_mqtt -> routing policy decision`
-- `ports -> platform headers`
-- `tests -> hidden real time sleeps for core timing logic`
-- `app/runtime -> duplicated domain rules`
+Forbidden:
+- core including adapter headers
+- ports including platform headers
+- adapter logic deciding domain policy
+- app/runtime bypassing core contracts to mutate internal domain state
+- public API exposing live mutable runtime internals
 
 ---
 
-## 10. Review checklist
+## 11. Review checklist
 
-При рев’ю кожної зміни перевіряти:
-1. Чи не з’явилась нова залежність `core -> adapter`
-2. Чи не почав `ports` тягнути platform/core implementation details
-3. Чи не з’явився god-module через convenience include
-4. Чи не порушено host-side testability
-5. Чи не змішано policy і mechanism
-6. Чи узгоджується CMake `REQUIRES` з цим документом
+Every dependency-sensitive change must be reviewed for:
+- direction of dependency
+- header leakage
+- ownership boundary
+- test seam quality
+- whether the change should be represented as a port instead of a direct dependency
 
 ---
 
-## 11. Definition of Done
+## 12. Definition of Done for dependency rules
 
-Правила залежностей вважаються зафіксованими, якщо:
-- кожен модуль можна однозначно віднести до одного logical layer
-- всі міжмодульні залежності проходять через дозволені контракти
-- core можна збирати і тестувати без adapters/platform runtime
-- adapters можна замінювати без переписування core
-- review/CMake/include policy не суперечать цим правилам
+Dependency rules are considered established if:
+- logical layers are explicit
+- allowed core-to-core dependencies are explicit
+- app/runtime seams are defined separately from core
+- include policy is explicit
+- the rules are usable for review, CMake wiring, and automated checks

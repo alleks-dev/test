@@ -1,39 +1,39 @@
 # ADR_EXCEPTIONS.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ задає єдиний процес для тимчасових винятків із архітектурних правил.
+This document defines a single process for temporary exceptions to architecture rules.
 
-Він потрібен для того, щоб:
-- не маскувати architectural debt як "тимчасове рішення"
-- робити винятки видимими й обмеженими в часі
-- пов'язувати кожен виняток з конкретним `rule_id`
+It exists to:
+- prevent architectural debt from being hidden as a "temporary solution"
+- make exceptions visible and time-bounded
+- tie every exception to a concrete `rule_id`
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
 - `docs/governance/CI_RULES.md`
 - `docs/governance/TEAM_WORKFLOW.md`
 
 ---
 
-## 2. Коли виняток допустимий
+## 2. When an exception is allowed
 
-Виняток допустимий лише якщо одночасно виконуються всі умови:
-- без нього неможливо розблокувати реальний крок розробки
-- тимчасове рішення локалізоване
-- impact зрозумілий і документований
-- є конкретний план видалення винятку
+An exception is allowed only if all of the following are true:
+- it is required to unblock a real development step
+- the temporary deviation is localized
+- the impact is understood and documented
+- there is a concrete removal plan
 
-Виняток не допустимий для:
-- невизначеного "потім виправимо"
-- зручності без технічного обгрунтування
-- обходу `blocker` правила без owner і expiry
+An exception is not allowed for:
+- vague "we will fix it later"
+- convenience without technical justification
+- bypassing a `blocker` rule without an owner and expiry
 
 ---
 
-## 3. Обов'язкові поля винятку
+## 3. Required fields
 
-Кожен виняток повинен містити:
+Every exception must contain:
 - `exception_id`
 - `rule_id`
 - `status`
@@ -47,7 +47,7 @@
 
 ---
 
-## 4. Нормативний шаблон
+## 4. Normative template
 
 ```text
 exception_id: EXC-YYYY-NN
@@ -66,27 +66,27 @@ verification_plan: checks/tests that confirm safe temporary use
 
 ## 5. Approval policy
 
-- `blocker` rules вимагають явного reviewer approval
-- `major` rules вимагають хоча б одного owner і issue/task reference
-- `minor` rules можуть бути прийняті тільки якщо не впливають на correctness або safety
+- `blocker` rules require explicit reviewer approval
+- `major` rules require at least one owner and an issue/task reference
+- `minor` rules may be accepted only if they do not affect correctness or safety
 
-Exception без `expires_on` недійсний.
+An exception without `expires_on` is invalid.
 
 ---
 
 ## 6. Expiry policy
 
-- при досягненні `expires_on` виняток автоматично вважається простроченим
-- прострочений виняток блокує merge нових змін у відповідному scope
-- продовження винятку потребує нового review
+- once `expires_on` is reached, the exception is automatically considered expired
+- an expired exception blocks new merges in the affected scope
+- extending an exception requires a new review
 
 ---
 
 ## 7. Registry
 
-На поточному етапі активних винятків немає.
+There are currently no active exceptions.
 
-При появі винятків вони повинні додаватися нижче в цьому документі.
+When exceptions appear, they must be added below in this document.
 
 ---
 

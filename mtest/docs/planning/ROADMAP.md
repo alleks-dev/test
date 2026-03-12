@@ -1,59 +1,60 @@
 # ROADMAP.md
 
-## 1. Мета
+## 1. Goal
 
-Цей документ описує покрокову дорожню карту розвитку MQTT-брокера для ESP32-S3 так, щоб система еволюціонувала:
+This document defines the staged development roadmap for the ESP32-S3 MQTT broker so that the system evolves:
 
-- від `Single broker`
-- до `Primary/Standby`
-- і далі до `Federated multi-broker`
+- from `single-broker mode`
+- to `Primary/Standby`
+- and later to `federated multi-broker mode`
 
-Ключова мета roadmap:
-- рухатись інкрементально
-- не ламати архітектуру при рості
-- зберігати тестованість і модульність
-- контролювати SRAM/PSRAM бюджети
-- переводити складність у систему поетапно, а не одразу
-
----
-
-## 2. Загальна стратегія
-
-Правильний розвиток цього проєкту має виглядати так:
-
-1. **спочатку стабільне ядро**
-2. **потім спостережуваність і контроль**
-3. **потім bridge / broker-link**
-4. **потім selective federation**
-5. **лише після цього production federation / HA профілі**
-
-Тобто ми не починаємо з кластера.  
-Ми спочатку будуємо **один дуже чистий вузол**, який:
-- добре тестується
-- має чіткі доменні моделі
-- готовий до remote-origin / remote-target
-- не залежить архітектурно від single-only assumptions
-- є MQTT 5-ready на рівні архітектури, але без обов’язкової повної MQTT 5 реалізації в MVP
+The key goal of the roadmap is to:
+- move incrementally
+- avoid breaking the architecture as the system grows
+- preserve testability and modularity
+- control SRAM/PSRAM budgets
+- introduce complexity in stages, not all at once
 
 ---
 
-## 3. Архітектурні цілі roadmap
+## 2. Overall strategy
 
-На кожному етапі треба перевіряти, що система зберігає такі властивості:
+The correct growth path for this project is:
 
-- core не залежить від ESP-IDF деталей
-- MQTT packet model не протікає в domain layer
-- routing не прив’язаний до socket implementation
-- session / retained / QoS не залежать від конкретної топології
-- transport / storage / federation підключаються через інтерфейси
-- вся нова функціональність покривається тестами
+1. **stable core first**
+2. **then observability and control**
+3. **then bridge / broker-link**
+4. **then selective federation**
+5. **only after that production federation / HA profiles**
+
+That means we do not start with a cluster.
+We first build **one very clean node** that:
+- tests well
+- has clear domain models
+- is ready for remote origin / remote target
+- is not architecturally tied to single-only assumptions
+- is MQTT 5-ready at the architectural level without requiring full MQTT 5 implementation in the MVP
 
 ---
 
-## 4. Принципи пріоритезації
+## 3. Architectural goals of the roadmap
+
+At every stage we must verify that the system preserves the following properties:
+
+- core does not depend on ESP-IDF details
+- the MQTT packet model does not leak into the domain layer
+- routing is not tied to socket implementation
+- session / retained / QoS do not depend on a specific topology
+- transport / storage / federation are plugged in through interfaces
+- every new feature is covered by tests
+
+---
+
+## 4. Prioritization principles
 
 ### 4.1. Correctness before scale
-Спочатку правильна семантика:
+
+Correct semantics first:
 - connect
 - subscribe
 - publish
@@ -61,40 +62,45 @@
 - QoS1
 - session restore
 
-Потім масштабування.
+Scaling comes later.
 
 ### 4.2. Observability before federation
-Перш ніж додавати міжвузлову логіку, треба мати:
+
+Before adding inter-node logic, the system must already have:
 - logs
 - metrics
 - traces
 - debug hooks
 
 ### 4.3. Single-node stability before multi-node behavior
-Спочатку single broker має бути надійним:
-- без витоків
-- без зависань
-- без хаотичних retry
-- з контрольованою пам’яттю
+
+The single-broker mode must first become reliable:
+- no leaks
+- no hangs
+- no chaotic retries
+- controlled memory usage
 
 ### 4.4. Federation through policy, not rewrite
-Federation повинна з’являтися як:
-- нові policy
-- нові adapters
-- нові route decisions
 
-А не як повна перебудова core.
+Federation must appear as:
+- new policies
+- new adapters
+- new route decisions
+
+not as a rewrite of the core.
 
 ---
 
-## 5. Етап 0 — Foundations
+## 5. Stage 0 - Foundations
 
-### Ціль
-Зафіксувати технічний фундамент до написання великого обсягу коду.
+### Goal
 
-### Результати етапу
-- узгоджена доменна модель
-- єдина logical/physical структура директорій
+Establish the technical foundation before writing a large amount of code.
+
+### Stage results
+
+- aligned domain model
+- a unified logical/physical directory structure
 - coding guidelines
 - architecture guidelines
 - test strategy
@@ -103,6 +109,7 @@ Federation повинна з’являтися як:
 - namespace strategy
 
 ### Deliverables
+
 - `docs/architecture/ARCHITECTURE.md`
 - `docs/architecture/CODING_GUIDELINES.md`
 - `docs/architecture/TECH_STACK.md`
@@ -125,41 +132,45 @@ Federation повинна з’являтися як:
 - `scripts/check_arch_invariants.sh`
 - `scripts/run_blocking_local_checks.sh`
 - `docs/planning/ROADMAP.md`
-- базові domain type definitions
+- base domain type definitions
 - agreed naming conventions
 - agreed module boundaries
 
 ### Exit criteria
-- команда погодила шари системи
-- зафіксовані `Message`, `Subscription`, `DeliveryTarget`
-- зафіксовані `origin`, `scope`, `flags`
-- зафіксовані memory budgets high-level
-- є мінімальний skeleton проекту
-- є architecture compliance matrix з `rule_id`
-- є exception process для тимчасових відхилень
-- є локальний architecture check bundle
-- є documented read-model, runtime execution і async operation strategy
+
+- the team agrees on system layers
+- `Message`, `Subscription`, and `DeliveryTarget` are fixed
+- `origin`, `scope`, and `flags` are fixed
+- high-level memory budgets are fixed
+- a minimal project skeleton exists
+- an architecture compliance matrix with `rule_id` values exists
+- an exception process for temporary deviations exists
+- a local architecture check bundle exists
+- documented read-model, runtime-execution, and async operation strategies exist
 
 ---
 
-## 6. Етап 1 — Clean Single Broker Core
+## 6. Stage 1 - Clean single-broker core
 
-### Ціль
-Побудувати мінімальне, чисте, правильне ядро брокера для одного вузла.
+### Goal
 
-### Обсяг
+Build the minimal, clean, correct broker core for a single node.
+
+### Scope
+
 - protocol engine
-- qos engine
+- QoS engine
 - session manager
 - retained store
 - subscription index
-- acl engine
+- ACL engine
 - routing engine
 - transport abstraction
 - storage interfaces
 - runtime wiring
 
-### Що має працювати
+### What must work
+
 - client connect/disconnect
 - subscribe/unsubscribe
 - publish
@@ -167,48 +178,54 @@ Federation повинна з’являтися як:
 - QoS 0
 - QoS 1
 - clean session
-- basic persistent session semantics
-- базові protocol limits
+- basic persistent-session semantics
+- basic protocol limits
 
-### MQTT policy для ранніх етапів
-- core і protocol engine повинні бути `MQTT 5-ready`
-- MVP не зобов’язаний підтримувати весь MQTT 5 feature set
-- нові MQTT 5 capabilities додаються лише поетапно з тестами і budget review
+### MQTT policy for early stages
+
+- core and protocol engine must be `MQTT 5-ready`
+- the MVP is not required to support the full MQTT 5 feature set
+- new MQTT 5 capabilities are added only incrementally with tests and a budget review
 
 MQTT 5 readiness profile:
 - `must-have later`: reason codes, session expiry, message expiry, receive maximum, maximum packet size
 - `maybe later`: user properties, response topic / correlation data, topic aliases, subscription identifiers
 - `definitely not MVP`: full packet-property coverage, shared subscriptions, optimization-heavy protocol features without measured value
 
-### Чого ще не робимо
+### What we do not build yet
+
 - federation
 - multi-node route propagation
 - failover
 - topology management
-- складні bridge policies
+- complex bridge policies
 
 ### Deliverables
-- working single broker
+
+- working single-broker mode
 - host-side core tests
 - minimal platform adapter
 - basic metrics counters
 - configuration loader
 
 ### Exit criteria
-- стабільна робота single broker у basic сценаріях
-- всі critical unit tests зелені
-- core не залежить напряму від ESP-IDF
-- routing не залежить від sockets
-- retained/QoS/session працюють у deterministic tests
+
+- stable single-broker operation in basic scenarios
+- all critical unit tests are green
+- core does not depend directly on ESP-IDF
+- routing does not depend on sockets
+- retained/QoS/session behave deterministically in tests
 
 ---
 
-## 7. Етап 2 — Resource Control and Observability
+## 7. Stage 2 - Resource Control and Observability
 
-### Ціль
-Зробити систему придатною до реального development/debugging і контрольованою за ресурсами.
+### Goal
 
-### Обсяг
+Make the system suitable for real development/debugging and resource control.
+
+### Scope
+
 - structured logging
 - metrics
 - event tracing
@@ -219,9 +236,10 @@ MQTT 5 readiness profile:
 - config migration support
 - explicit limits for payload/topic/clients/queues
 
-### Що має з’явитися
+### What must appear
+
 - counters for publish / deny / retry / drop
-- retained count metrics
+- retained-count metrics
 - inflight QoS1 metrics
 - memory budget reporting
 - tracing for route decisions
@@ -231,6 +249,7 @@ MQTT 5 readiness profile:
 - migration path from previous supported config versions
 
 ### Deliverables
+
 - observability module
 - metrics port + adapter
 - debug build profile
@@ -239,54 +258,62 @@ MQTT 5 readiness profile:
 - config migration tests
 
 ### Exit criteria
-- будь-яка критична подія має trace/log/metric
-- memory pressure видно з runtime
-- ліміти конфігурації явно перевіряються
-- можна діагностувати queue overflow, retry storm, retained growth
-- supported previous config versions мігруються детерміновано
-- incompatible config versions fail-fast на startup
+
+- every critical event has trace/log/metric visibility
+- memory pressure is visible at runtime
+- configuration limits are explicitly validated
+- queue overflow, retry storms, and retained growth can be diagnosed
+- supported previous config versions are migrated deterministically
+- incompatible config versions fail fast at startup
 
 ---
 
-## 8. Етап 3 — Persistence Maturity
+## 8. Stage 3 - Persistence Maturity
 
-### Ціль
-Стабілізувати логіку збереження стану до введення складніших топологій.
+### Goal
 
-### Обсяг
+Stabilize state persistence before introducing more complex topologies.
+
+### Scope
+
 - retained persistence
 - session checkpoints
 - restart recovery
 - storage abstraction hardening
-- corrupted state handling
+- corrupted-state handling
 - snapshot validation
 
-### Що має працювати
+### What must work
+
 - broker restart without catastrophic state loss
 - retained restore
 - selective session restore
 - graceful handling of partial/corrupted persistence
 
 ### Deliverables
+
 - persistence adapter(s)
 - recovery tests
 - storage fault tests
 - snapshot format/versioning rules
 
 ### Exit criteria
-- after restart retained data відновлюються правильно
-- session restore не руйнує routing/QoS state
-- corrupted storage не валить вузол
-- persistence semantics формалізовані тестами
+
+- retained data is restored correctly after restart
+- session restore does not corrupt routing/QoS state
+- corrupted storage does not bring down the node
+- persistence semantics are formalized by tests
 
 ---
 
-## 9. Етап 4 — Broker Link (Point-to-Point Bridge)
+## 9. Stage 4 - Broker Link (Point-to-Point Bridge)
 
-### Ціль
-Додати мінімальний міжвузловий зв’язок без повної федерації.
+### Goal
 
-### Обсяг
+Add minimal inter-node communication without full federation.
+
+### Scope
+
 - broker-to-broker transport adapter
 - remote publish ingest
 - export/import topic rules
@@ -294,36 +321,42 @@ MQTT 5 readiness profile:
 - basic dedup metadata
 - one-link integration tests
 
-### Архітектурний сенс
-Це проміжний крок між single broker і federated.  
-Мета — не кластер, а **керований bridge**.
+### Architectural meaning
 
-### Що має працювати
-- broker A експортує частину topic-ів
-- broker B імпортує ці topic-и
-- remote-origin зберігається
-- local routing і remote forwarding не конфліктують
+This is the intermediate step between single-broker mode and federation.
+The goal is not a cluster, but a **controlled bridge**.
+
+### What must work
+
+- broker A exports a subset of topics
+- broker B imports those topics
+- remote origin is preserved
+- local routing and remote forwarding do not conflict
 
 ### Deliverables
+
 - `IFederationLink` implementation
 - bridge config model
 - export/import rule engine
 - basic multi-node simulator
 
 ### Exit criteria
-- один broker link працює стабільно
-- dedup metadata не губиться
-- remote-origin коректно проходить через system
-- policy-driven forwarding працює в tests
+
+- one broker link operates stably
+- dedup metadata is preserved
+- remote origin flows correctly through the system
+- policy-driven forwarding works in tests
 
 ---
 
-## 10. Етап 5 — Selective Federation
+## 10. Stage 5 - Selective Federation
 
-### Ціль
-Перейти від point-to-point bridge до керованої федерації кількох вузлів.
+### Goal
 
-### Обсяг
+Move from a point-to-point bridge to controlled federation across multiple nodes.
+
+### Scope
+
 - remote subscription propagation
 - route scoping
 - anti-loop logic
@@ -331,48 +364,55 @@ MQTT 5 readiness profile:
 - federation policy engine
 - multi-link simulation
 
-### Що має працювати
-- кілька broker links
+### What must work
+
+- multiple broker links
 - selective forwarding
-- subscription announce between brokers
+- subscription announcements between brokers
 - no infinite routing loops
 - predictable local-vs-remote route behavior
 
 ### Deliverables
+
 - federation policy module
 - remote subscription registry
 - anti-loop metadata rules
-- simulation tests for 2–3 nodes
+- simulation tests for 2-3 nodes
 - failure/reconnect federation tests
 
 ### Exit criteria
-- multi-node routing відтворюваний у simulation
-- anti-loop logic доведена тестами
-- namespace policy працює стабільно
-- single-node mode не зламаний
+
+- multi-node routing is reproducible in simulation
+- anti-loop logic is proven by tests
+- namespace policy behaves stably
+- single-node mode is not broken
 
 ---
 
-## 11. Етап 6 — Primary / Standby Profile
+## 11. Stage 6 - Primary / Standby Profile
 
-### Ціль
-Додати профіль підвищеної доступності без повного shared-state cluster.
+### Goal
 
-### Обсяг
+Add a higher-availability profile without a full shared-state cluster.
+
+### Scope
+
 - active/standby node roles
 - health/heartbeat
 - retained/session snapshot sync
 - failover policy
 - recovery behavior after role switch
 
-### Важливе обмеження
-Не намагатися одразу синхронізувати:
-- увесь inflight state у реальному часі
-- повну live-replication кожного publish
+### Important limitation
 
-Primary/Standby має бути practical, не academic.
+Do not try to synchronize immediately:
+- the entire inflight state in real time
+- full live replication of every publish
+
+Primary/Standby must be practical, not academic.
 
 ### Deliverables
+
 - role manager
 - heartbeat channel
 - sync snapshot format
@@ -380,273 +420,181 @@ Primary/Standby має бути practical, не academic.
 - failover tests
 
 ### Exit criteria
-- primary/standby працює на N16R8 профілі
-- failover сценарій проходить integration tests
-- state sync обмежений і контрольований
-- single broker core не переписувався заради standby
+
+- primary/standby works on the `N16R8` profile
+- failover passes integration tests
+- state sync is limited and controlled
+- the single-broker core was not rewritten for standby
 
 ---
 
-## 12. Етап 7 — Production Federation
+## 12. Stage 7 - Production Federation
 
-### Ціль
-Зробити federated deployment придатним до реальної експлуатації.
+### Goal
 
-### Обсяг
+Make federated deployment suitable for real operation.
+
+### Scope
+
 - topology health monitoring
 - link reconnect strategy
-- degraded mode behavior
+- degraded-mode behavior
 - policy conflict handling
 - federation diagnostics
 - production config profiles
 
-### Що має бути
-- зрозуміло, які topic-и локальні
-- зрозуміло, які topic-и експортуються
-- зрозуміло, як поводитися при частковому відпаданні вузлів
-- є metrics/diagnostics для federation layer
+### What must be clear
+
+- which topics are local
+- which topics are exported
+- how to behave when part of the topology disappears
+- what metrics/diagnostics exist for the federation layer
 
 ### Deliverables
+
 - production federation config
 - route/failure playbooks
 - topology diagnostics
 - soak-tested federation profile
 
 ### Exit criteria
-- federated mode працює в 2–5 вузлах у simulation та hardware tests
-- деградація одного вузла не руйнує всю систему
-- route loops виключені policy/test design
-- metrics/logging достатні для експлуатації
+
+- federated mode works across 2-5 nodes in simulation and hardware tests
+- degradation of one node does not break the entire system
+- route loops are excluded by policy/test design
+- metrics/logging are sufficient for operation
 
 ---
 
-## 13. Етап 8 — Performance and Hardening
+## 13. Stage 8 - Performance and Hardening
 
-### Ціль
-Полірування системи під реальні навантаження і довгу роботу.
+### Goal
 
-### Обсяг
+Polish the system for real workloads and long-term operation.
+
+### Scope
+
 - performance profiling
 - memory fragmentation checks
 - latency measurements
 - throughput measurements
 - queue tuning
-- soak testing
-- watchdog hardening
-- fault injection
-
-### Що аналізувати
-- publish latency
-- retained lookup cost
-- queue growth under burst
-- reconnect recovery time
-- heap high-water marks
-- PSRAM pressure
-- task starvation risks
+- reconnect tuning
+- configuration hardening
+- watchdog-safe runtime behavior
 
 ### Deliverables
-- benchmark reports
-- budget-tuned configs
-- hardening fixes
-- long-run soak reports
+
+- performance baselines
+- release profiles
+- tuning recommendations for `N8R2` / `N16R8`
+- hardening test suite
 
 ### Exit criteria
-- пройдені soak tests
-- бюджет пам’яті не перевищується
-- latency/throughput відповідають цілям
-- fault scenarios не призводять до некерованої деградації
+
+- publish latency is measurable and bounded in target scenarios
+- queue tuning is documented
+- long-running instability patterns are eliminated or understood
+- release profiles are clearly separated from debug profiles
 
 ---
 
-## 14. Платформні профілі roadmap
+## 14. Testing policy across stages
 
-### 14.1. ESP32-S3 N8R2
-
-Фокус:
-- single broker
-- tighter budgets
-- conservative retained limits
-- smaller queues
-- limited bridge mode
-- federation лише в дуже контрольованій формі
-
-### Roadmap recommendation
-- обов’язково проходити Етапи 0–4
-- Етап 5 робити лише selective і lightweight
-- Етап 6 не є пріоритетом
-- production federation лише для малих сегментів
+At every stage:
+- every new capability must come with new tests
+- host-side core tests remain mandatory
+- failure paths must be covered together with happy paths
+- simulation must appear before serious federation/handover claims
+- hardware tests must validate the target profiles before release
 
 ---
 
-### 14.2. ESP32-S3 N16R8
+## 15. Memory policy across stages
 
-Фокус:
-- stronger single broker
-- primary/standby practical
-- selective federation practical
-- larger retained/session budgets
-- longer soak and HA scenarios
+The roadmap must never ignore memory budgets.
 
-### Roadmap recommendation
-- проходити всі етапи 0–8
-- Етап 6 є реальним production-кандидатом
-- Етап 7 має сенс для multi-zone systems
+At every stage we must ask:
+- what grows in SRAM
+- what grows in PSRAM
+- what becomes bounded
+- what needs a profile-specific limit
 
----
+For `N8R2`:
+- keep the system conservative
+- avoid large retained/session sets
+- keep federation minimal or off by profile
 
-## 15. Test gates по етапах
-
-### Після Етапу 1
-- unit tests green
-- core integration tests green
-- single broker smoke tests green
-
-### Після Етапу 2
-- observability hooks validated
-- memory metrics available
-- config limit tests green
-
-### Після Етапу 3
-- restart recovery tests green
-- corrupted persistence tests green
-
-### Після Етапу 4
-- two-node bridge simulation green
-- origin/dedup integration green
-
-### Після Етапу 5
-- multi-node federation simulation green
-- anti-loop regression suite green
-
-### Після Етапу 6
-- standby/failover tests green
-- snapshot sync recovery green
-
-### Після Етапу 7
-- degraded topology tests green
-- production config validation green
-
-### Після Етапу 8
-- soak tests green
-- performance baseline accepted
-- memory budget assertions green
+For `N16R8`:
+- allow broader retained/session sets
+- allow standby/federation profiles
+- keep diagnostics richer in debug modes
 
 ---
 
-## 16. Ризики roadmap
+## 16. Migration policy across stages
 
-### Ризик 1 — передчасна складність
-Спроба занадто рано додати:
-- federation
-- HA
-- topology discovery
+A later stage must not invalidate earlier stages.
 
-Результат:
-- нестабільний core
-- складні й неінформативні баги
+This means:
+- federation cannot break single-broker correctness
+- standby cannot require rewriting the core model
+- observability cannot change business semantics
+- persistence cannot leak storage details into the domain layer
 
-### Ризик 2 — слабка observability
-Якщо немає:
-- metrics
-- trace
-- counters
-- memory visibility
-
-federation стане майже неможливо відлагодити.
-
-### Ризик 3 — platform leakage в core
-Якщо ESP-IDF деталі протечуть у core, будь-яка еволюція стане дорожчою.
-
-### Ризик 4 — відсутність simulation layer
-Без simulation:
-- multi-node bugs знаходяться занадто пізно
-- hardware-debug стає занадто дорогим
-
-### Ризик 5 — відсутність strict config limits
-Без жорстких лімітів на:
-- queue depth
-- retained count
-- payload size
-- clients count
-
-система буде падати неявно під навантаженням.
+If a feature requires rewriting earlier architectural boundaries, the roadmap is wrong.
 
 ---
 
-## 17. Критерії успіху roadmap
+## 17. Recommended implementation order inside Stage 1
 
-Roadmap вважається успішним, якщо:
-
-1. Single broker стабільний до появи federation.
-2. Core не переписується при переході до bridge/federation.
-3. Кожен етап має власні тестові gate-и.
-4. На N8R2 і N16R8 існують окремі конфігураційні профілі.
-5. Federation з’являється як policy/adapters extension, а не як архітектурний злам.
-6. Пам’ять, черги та retry завжди залишаються під контролем.
-7. Продукт можна дебажити в production-like режимі.
-
----
-
-## 18. Рекомендований порядок реалізації модулів
-
-```text
+Normative order for core modules:
 1. domain types
 2. protocol engine
-3. qos engine
+3. QoS engine
 4. session manager
-5. retained manager
+5. retained store
 6. subscription index
-7. acl engine
+7. ACL engine
 8. routing engine
 9. transport abstraction
-10. storage abstraction
+10. storage interfaces
 11. runtime wiring
-12. metrics/logging
-13. persistence
-14. broker link
-15. federation policies
-16. standby profile
-17. production federation tooling
-```
+
+This order exists to preserve clean boundaries and host-side testability.
 
 ---
 
-## 19. Мінімальний MVP
+## 18. Risks to watch
 
-### MVP для N8R2
-- single broker
-- QoS0/1
-- retained
-- basic sessions
-- strict limits
-- metrics/logging
-- restart recovery
-- MQTT 5-ready architecture without full MQTT 5 feature matrix
-- no commitment to nonessential MQTT 5 optional features
-
-### MVP для N16R8
-- усе з N8R2 MVP
-- larger budgets
-- bridge-ready core
-- stronger persistence
-- optional primary/standby preparation
-- staged MQTT 5 feature rollout only where justified by use case
+High-risk areas:
+- putting too much logic into `broker_core`
+- letting ESP-IDF leak into core headers
+- underestimating QoS retry complexity
+- mixing federation policy into transport code
+- unbounded retained/session growth
+- introducing MQTT 5 features without full test/budget review
 
 ---
 
-## 20. Підсумок
+## 19. Definition of roadmap success
 
-Ця roadmap навмисно веде від простого до складного:
+The roadmap is successful if:
+- the system grows without architectural rewrites
+- each stage leaves behind a stable, testable base
+- single-node correctness remains intact through all later stages
+- observability and resource control improve before topology complexity grows
+- new deployment profiles are mostly a matter of wiring and policy, not core redesign
 
-- **спочатку ядро**
-- **потім контроль і спостережуваність**
-- **потім bridge**
-- **потім federation**
-- **потім HA і production hardening**
+---
 
-Такий порядок дозволяє:
-- уникнути архітектурного боргу
-- не ламати core при рості
-- зберегти чисту модульність
-- тримати проект придатним до тестування
-- природно перейти від `Single broker` до `Federated multi-broker`
+## 20. Summary
+
+The correct development path for this project is:
+- build one clean broker node first
+- make it observable and bounded
+- add point-to-point linkage
+- then add selective federation
+- only later add production-grade standby/federation profiles
+
+This keeps the project technically honest and prevents the architecture from collapsing under early distributed-system complexity.

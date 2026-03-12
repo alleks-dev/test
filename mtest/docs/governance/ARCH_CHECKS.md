@@ -1,30 +1,30 @@
 # ARCH_CHECKS.md
 
-## 1. Мета
+## 1. Purpose
 
-Цей документ описує набір автоматичних архітектурних перевірок для репозиторію.
+This document describes the automated architecture checks for the repository.
 
-Його цілі:
-- зробити `docs/governance/ARCH_COMPLIANCE_MATRIX.md` виконуваним на практиці
-- визначити мінімальний check bundle для локального запуску і CI
-- дати специфікацію для `scripts/check_arch_invariants.sh`
+Its goals are to:
+- make `docs/governance/ARCH_COMPLIANCE_MATRIX.md` executable in practice
+- define the minimum local and CI check bundle
+- provide the specification for `scripts/check_arch_invariants.sh`
 
-Документ узгоджується з:
+This document aligns with:
 - `docs/governance/ARCH_COMPLIANCE_MATRIX.md`
 - `docs/governance/CI_RULES.md`
 - `docs/governance/TEAM_WORKFLOW.md`
 
 ---
 
-## 2. Базовий набір checks
+## 2. Baseline checks
 
-Мінімальний набір автоматичних архітектурних перевірок:
+Minimum automated architecture checks:
 - forbidden includes in `core`
 - forbidden includes in `ports`
 - forbidden `core -> adapter` references
 - composition-root checks for `main/app_main`
 - macro-gated test hook detection in public headers
-- presence/layout checks for `*_test_access.hpp` where test-only access is needed
+- presence and layout checks for `*_test_access.hpp` where test-only access is required
 
 ---
 
@@ -40,32 +40,32 @@
 
 ## 4. Script contract
 
-`scripts/check_arch_invariants.sh` повинен:
-- завершуватись `0`, якщо blocker violations відсутні
-- завершуватись non-zero, якщо знайдено blocker violations
-- показувати `rule_id`, file path і короткий remediation hint
-- працювати локально без мережевих залежностей
-- коректно пропускати code-level checks, якщо skeleton ще не створений
+`scripts/check_arch_invariants.sh` must:
+- exit with `0` when no blocker violations are present
+- exit non-zero when blocker violations are found
+- print `rule_id`, file path, and a short remediation hint
+- run locally without network dependencies
+- gracefully skip code-level checks when the skeleton does not exist yet
 
 ---
 
 ## 5. PR-level expectations
 
-На PR рівні обов'язкові:
+Required at PR level:
 - grep/static checks
 - header layout checks
 - forbidden dependency checks
 
-На nightly/pre-release можуть додаватися:
+Nightly/pre-release may additionally include:
 - compile graph checks
 - richer include dependency analysis
-- generated dependency report
+- generated dependency reports
 
 ---
 
 ## 6. Reporting contract
 
-Output перевірок повинен бути придатним для CI parsing і ручного review:
+Check output must be usable for both CI parsing and manual review:
 
 ```text
 [ARCH-003] blocker: platform header leaked into port
@@ -78,8 +78,8 @@ fix: replace with abstract domain or port contract type
 
 ## 7. Future extensions
 
-Коли з'явиться реальний skeleton-код, варто додати:
+When the real skeleton exists, add:
 - CMake graph validation
 - standalone public-header compile job
-- include dependency dump by component
+- per-component include dependency dumps
 - optional whitelist/exception integration from `docs/governance/ADR_EXCEPTIONS.md`
